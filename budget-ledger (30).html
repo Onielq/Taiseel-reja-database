@@ -1,0 +1,2242 @@
+<!-- direction: SOFT-DEPTH PRIORITY LEDGER — layered dark glass stands for where money is allowed to go, not decoration.
+     rules: glass only on the overview panel and category cards (never on rows/buttons); each accent hue owns exactly one job; no purple.
+     signature: a numbered priority rail (01→04) fused into every category header, making "give, save, essentials, lifestyle" a literal order you see, not just a caption. -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Budget Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* base surfaces */
+    --bg-0: #060a15;
+    --bg-1: #0a1120;
+    --bg-2: #0e1830;
+
+    /* glass */
+    --glass: rgba(255,255,255,0.055);
+    --glass-strong: rgba(255,255,255,0.09);
+    --glass-hover: rgba(255,255,255,0.08);
+    --glass-border: rgba(255,255,255,0.12);
+    --glass-border-strong: rgba(255,255,255,0.22);
+
+    /* text */
+    --text-0: #f4f6fb;
+    --text-1: rgba(244,246,251,0.72);
+    --text-2: rgba(244,246,251,0.46);
+    --text-2-strong: rgba(244,246,251,0.66);
+    --text-3: rgba(244,246,251,0.3);
+    --text-3-strong: rgba(244,246,251,0.52);
+
+    /* accents */
+    --gold: #e8b84b;      --gold-glow: rgba(232,184,75,0.28);
+    --emerald: #34d399;   --emerald-glow: rgba(52,211,153,0.28);
+    --sky: #5ea8f2;       --sky-glow: rgba(94,168,242,0.28);
+    --coral: #f0836a;     --coral-glow: rgba(240,131,106,0.28);
+
+    --success: #2dd4bf;
+    --danger: #ef4444;
+
+    --font-display: "Manrope", system-ui, -apple-system, sans-serif;
+    --font-text: "Inter", system-ui, -apple-system, sans-serif;
+
+    --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+    --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px; --space-16: 64px;
+
+    --radius-sm: 10px; --radius-md: 16px; --radius-lg: 22px;
+
+    --motion-fast: 120ms;
+    --motion-base: 220ms;
+    --motion-slow: 360ms;
+    --ease-standard: cubic-bezier(0.2,0,0,1);
+    --ease-decelerate: cubic-bezier(0,0,0,1);
+    --ease-spring: cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-text);
+    font-size: 15px;
+    color: var(--text-0);
+    background: var(--bg-0);
+    min-height: 100vh;
+    position: relative;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: var(--emerald); color: #04150e; }
+
+  .bg-field { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+  .bg-field::before {
+    content: ""; position: absolute; inset: 0;
+    background:
+      radial-gradient(680px 480px at 12% -8%, var(--emerald-glow), transparent 60%),
+      radial-gradient(620px 460px at 108% 10%, var(--gold-glow), transparent 60%),
+      radial-gradient(700px 520px at 50% 118%, var(--sky-glow), transparent 60%),
+      linear-gradient(180deg, var(--bg-1), var(--bg-0) 55%);
+    opacity: 0.9;
+  }
+  .bg-field::after {
+    content: ""; position: absolute; inset: 0;
+    background-image: linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+    background-size: 34px 34px;
+    mask-image: radial-gradient(120% 90% at 50% 0%, #000 10%, transparent 75%);
+  }
+
+  .icon { width: 18px; height: 18px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .icon-lg { width: 22px; height: 22px; }
+
+  .glass {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  /* Topbar */
+  .topbar { position: sticky; top: 0; z-index: 20; background: rgba(6,10,21,0.72); border-bottom: 1px solid var(--glass-border); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+  .topbar-inner { max-width: 1000px; margin: 0 auto; padding: var(--space-4) var(--space-6); display: flex; align-items: center; justify-content: space-between; gap: var(--space-5); flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: var(--space-3); }
+  .brand-mark { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, var(--emerald), var(--sky)); display: flex; align-items: center; justify-content: center; color: #04150e; flex-shrink: 0; }
+  .brand-mark .icon { stroke: #04150e; width: 18px; height: 18px; }
+  .brand h1 { font-family: var(--font-display); font-size: 1.1rem; font-weight: 800; margin: 0; letter-spacing: -0.01em; }
+  .brand-sub { margin: 1px 0 0; font-size: 0.76rem; color: var(--text-2-strong); }
+
+  .field-group { display: flex; gap: var(--space-4); flex-wrap: wrap; }
+  .field { display: flex; flex-direction: column; gap: 3px; }
+  .field label { font-size: 0.68rem; color: var(--text-2-strong); }
+  .field-shell { display: flex; align-items: center; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 10px; padding: 0 var(--space-3); transition: border-color var(--motion-fast) var(--ease-standard); }
+  .field-shell:focus-within { border-color: var(--glass-border-strong); }
+  .field input { font-family: var(--font-display); font-size: 0.95rem; font-weight: 700; background: transparent; border: none; color: var(--text-0); padding: 7px 2px; min-height: 30px; }
+  .field input:focus { outline: none; }
+  .field input[type="month"] { color-scheme: dark; font-family: var(--font-text); font-weight: 600; }
+  #netIncome { width: 128px; text-align: right; }
+  #budgetMonth { width: 128px; }
+  .rwf-prefix { font-size: 0.78rem; color: var(--text-2-strong); }
+
+  /* Layout */
+  .wrap { max-width: 1000px; margin: 0 auto; padding: var(--space-6) var(--space-4) var(--space-16); position: relative; z-index: 1; }
+
+  /* Overview panel */
+  .overview-panel { padding: var(--space-6); margin-bottom: var(--space-6); }
+  .overview-top { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-6); flex-wrap: wrap; margin-bottom: var(--space-5); }
+  .overview-hero { min-width: 0; }
+  .overview-label { display: block; font-size: 0.78rem; color: var(--text-2-strong); margin-bottom: 4px; }
+  .overview-value { font-family: var(--font-display); font-size: clamp(2.1rem, 5.6vw, 2.9rem); font-weight: 800; line-height: 1; letter-spacing: -0.01em; }
+  .overview-month { font-size: 0.82rem; color: var(--text-2-strong); }
+
+  .overview-ring { position: relative; width: 72px; height: 72px; flex-shrink: 0; }
+  .overview-ring svg { width: 100%; height: 100%; display: block; }
+  .ring-track { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 7; }
+  .ring-fill { fill: none; stroke: var(--emerald); stroke-width: 7; stroke-linecap: round; stroke-dasharray: 326.73; stroke-dashoffset: 326.73; transition: stroke-dashoffset var(--motion-slow) var(--ease-standard), stroke var(--motion-base) var(--ease-standard); }
+  .ring-label { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .ring-pct { font-family: var(--font-display); font-weight: 800; font-size: 0.94rem; font-variant-numeric: tabular-nums; }
+  .ring-caption { font-size: 0.56rem; color: var(--text-2-strong); margin-top: -1px; }
+
+  .kpi-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); margin-bottom: var(--space-5); }
+  .kpi-tile { background: var(--glass-strong); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); position: relative; }
+  .wealth-spark { display: none; width: 100%; height: 20px; margin-top: 6px; }
+  .wealth-spark path { fill: none; stroke: var(--emerald); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.8; }
+  .wealth-spark circle { fill: var(--emerald); }
+  .kpi-tile-label { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--text-2-strong); margin-bottom: 6px; }
+  .kpi-tile-label .icon { width: 13px; height: 13px; }
+  .kpi-tile-value { font-family: var(--font-display); font-size: 1.28rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .kpi-tile-sub { font-size: 0.72rem; color: var(--text-2-strong); margin-top: 2px; }
+  .kpi-tile.is-negative .kpi-tile-value { color: var(--danger); }
+  .kpi-tile.is-positive .kpi-tile-value { color: var(--success); }
+
+  .composition-bar { display: flex; height: 8px; overflow: hidden; background: rgba(255,255,255,0.08); border-radius: 99px; }
+  .comp-seg { height: 100%; transition: width var(--motion-base) var(--ease-standard); }
+  .composition-legend { display: flex; flex-wrap: wrap; gap: var(--space-4); margin-top: var(--space-3); }
+  .legend-item { font-size: 0.76rem; color: var(--text-2-strong); display: inline-flex; align-items: center; gap: 6px; }
+  .legend-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+
+  .accent-gold-bg { background: var(--gold); } .accent-emerald-bg { background: var(--emerald); }
+  .accent-sky-bg { background: var(--sky); } .accent-coral-bg { background: var(--coral); }
+  .accent-gold-fg { color: var(--gold); } .accent-emerald-fg { color: var(--emerald); }
+  .accent-sky-fg { color: var(--sky); } .accent-coral-fg { color: var(--coral); }
+
+  /* Principles strip — collapsed by default, expands to the four cards */
+  .principles-strip { margin-bottom: var(--space-6); overflow: hidden; }
+  .principles-toggle { width: 100%; display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-5); background: transparent; border: none; cursor: pointer; color: inherit; font: inherit; text-align: left; min-height: 48px; }
+  .principles-icon { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; background: rgba(255,255,255,0.06); border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: center; color: var(--text-2-strong); }
+  .principles-icon .icon { width: 14px; height: 14px; }
+  .principles-summary { flex: 1; font-size: 0.82rem; color: var(--text-1); line-height: 1.4; }
+  .principles-chevron { flex-shrink: 0; display: flex; }
+  .principles-chevron .icon { width: 15px; height: 15px; color: var(--text-2-strong); transition: transform var(--motion-base) var(--ease-standard); }
+  .principles-strip.is-open .principles-chevron .icon { transform: rotate(180deg); }
+
+  .principles-body-wrap { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--motion-slow) var(--ease-standard); }
+  .principles-strip.is-open .principles-body-wrap { grid-template-rows: 1fr; }
+  .principles-body-inner { overflow: hidden; min-height: 0; }
+
+  .principles { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); padding: 0 var(--space-5) var(--space-5); }
+  .principle { padding: var(--space-4); background: rgba(255,255,255,0.035); border: 1px solid var(--glass-border); border-radius: var(--radius-md); }
+  .principle strong { display: flex; align-items: center; gap: 7px; font-family: var(--font-display); font-size: 0.86rem; margin-bottom: 5px; }
+  .principle strong .icon { width: 15px; height: 15px; }
+  .principle p { margin: 0; font-size: 0.79rem; line-height: 1.55; color: var(--text-2-strong); }
+
+  /* Category cards */
+  .categories { display: flex; flex-direction: column; gap: var(--space-4); margin-bottom: var(--space-6); }
+  .cat-card { padding: 0; overflow: hidden; transition: border-color var(--motion-base) var(--ease-standard), box-shadow var(--motion-base) var(--ease-standard); opacity: 0; }
+  .cat-card.accent-emerald { border-color: rgba(52,211,153,0.32); box-shadow: 0 0 0 1px rgba(52,211,153,0.05), 0 16px 44px -20px rgba(52,211,153,0.55); }
+  .cat-card.accent-emerald .cat-head-text h3 { color: var(--emerald); }
+
+  .cat-header { width: 100%; display: flex; align-items: center; gap: var(--space-4); padding: var(--space-4) var(--space-5); background: transparent; border: none; cursor: pointer; text-align: left; color: inherit; font: inherit; }
+  .cat-header:focus-visible { outline: 2px solid var(--glass-border-strong); outline-offset: -2px; }
+  .cat-rail { font-family: var(--font-display); font-weight: 800; font-size: 1.7rem; line-height: 1; flex-shrink: 0; width: 32px; text-align: center; font-variant-numeric: tabular-nums; opacity: 0.32; transition: opacity var(--motion-base) var(--ease-standard); }
+  .cat-header:hover .cat-rail, .cat-card.is-open .cat-rail { opacity: 0.55; }
+  .accent-gold .cat-rail { color: var(--gold); }
+  .accent-emerald .cat-rail { color: var(--emerald); }
+  .accent-sky .cat-rail { color: var(--sky); }
+  .accent-coral .cat-rail { color: var(--coral); }
+  .cat-icon-badge { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid var(--glass-border); }
+  .accent-gold .cat-icon-badge { background: rgba(232,184,75,0.14); color: var(--gold); }
+  .accent-emerald .cat-icon-badge { background: rgba(52,211,153,0.14); color: var(--emerald); }
+  .accent-sky .cat-icon-badge { background: rgba(94,168,242,0.14); color: var(--sky); }
+  .accent-coral .cat-icon-badge { background: rgba(240,131,106,0.14); color: var(--coral); }
+
+  .cat-head-text { flex: 1; min-width: 0; }
+  .cat-head-text h3 { font-family: var(--font-display); font-size: 1.05rem; font-weight: 800; margin: 0; }
+  .cat-caption { margin: 2px 0 0; font-size: 0.78rem; color: var(--text-2-strong); }
+  .cat-subtotal { text-align: right; flex-shrink: 0; }
+  .cat-subtotal-value { display: block; font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+  .cat-subtotal-pct { display: block; font-size: 0.72rem; color: var(--text-2-strong); margin-top: 1px; }
+  .cat-chevron { width: 15px; height: 15px; color: var(--text-2); transition: transform var(--motion-base) var(--ease-standard); flex-shrink: 0; }
+  .cat-card.is-open .cat-chevron { transform: rotate(180deg); }
+
+  .cat-progress-track { height: 4px; background: rgba(255,255,255,0.08); margin: 0 var(--space-5); border-radius: 99px; overflow: hidden; }
+  .cat-progress-fill { height: 100%; width: 100%; border-radius: 99px; transform: scaleX(0); transform-origin: left; transition: transform var(--motion-base) var(--ease-standard); }
+
+  .cat-body-wrap { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--motion-slow) var(--ease-standard); }
+  .cat-card.is-open .cat-body-wrap { grid-template-rows: 1fr; }
+  .cat-body-inner { overflow: hidden; min-height: 0; }
+  .cat-body { padding: var(--space-4) var(--space-5) var(--space-5); }
+
+  /* Parent KPI row (wealth building) */
+  .parent-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: var(--space-2); margin-bottom: var(--space-4); padding: var(--space-3); background: rgba(255,255,255,0.035); border: 1px solid var(--glass-border); border-radius: var(--radius-md); }
+  .parent-kpi { padding: var(--space-2) var(--space-2); }
+  .parent-kpi-label { display: block; font-size: 0.68rem; color: var(--text-2-strong); margin-bottom: 3px; }
+  .parent-kpi-value { display: block; font-family: var(--font-display); font-weight: 700; font-size: 0.94rem; font-variant-numeric: tabular-nums; }
+  .parent-kpi-value.is-positive { color: var(--success); }
+  .parent-kpi-value.is-negative { color: var(--danger); }
+  .parent-kpi.is-featured { background: rgba(255,255,255,0.06); border-radius: 0 10px 10px 0; border-left: 3px solid var(--emerald); padding-left: 9px; }
+  .parent-kpi.is-featured .parent-kpi-label { color: var(--text-1); }
+  .parent-kpi.is-featured .parent-kpi-value { font-size: 1.34rem; }
+
+  /* Simple item rows (give / essentials / lifestyle) */
+  .item-list { list-style: none; margin: 0 0 var(--space-3); padding: 0; display: flex; flex-direction: column; }
+  .item-row { display: flex; flex-direction: column; align-items: stretch; gap: 2px; padding: 8px 10px; border-radius: 10px; transition: background var(--motion-fast) var(--ease-standard), opacity var(--motion-fast) var(--ease-standard), transform var(--motion-fast) var(--ease-standard); }
+  .item-row:hover, .item-row:focus-within { background: rgba(255,255,255,0.04); }
+  .item-row.is-entering { opacity: 0; transform: translateY(-4px); }
+  .item-row.is-leaving { opacity: 0; transform: scale(0.97); }
+  .item-row-main { display: flex; align-items: center; gap: var(--space-2); }
+  .item-empty { margin: 0 0 var(--space-3); padding: var(--space-3) 10px; font-size: 0.82rem; color: var(--text-3-strong); font-style: italic; }
+  .item-label { flex: 1; min-width: 0; border: none; background: transparent; font-size: 0.87rem; color: var(--text-0); padding: 4px 2px; font-family: var(--font-text); }
+  .item-label:focus { outline: none; box-shadow: inset 0 -2px 0 var(--emerald); }
+  .item-amount { flex-shrink: 0; width: 104px; border: none; background: transparent; font-size: 0.9rem; font-weight: 700; text-align: right; padding: 4px 2px; color: var(--text-0); font-variant-numeric: tabular-nums; font-family: var(--font-display); }
+  .item-amount:focus { outline: none; box-shadow: inset 0 -2px 0 var(--emerald); }
+  .item-delete { flex-shrink: 0; border: none; background: transparent; color: var(--text-3); font-size: 1rem; cursor: pointer; width: 26px; height: 26px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: color var(--motion-fast) var(--ease-standard), background var(--motion-fast) var(--ease-standard); }
+  .item-delete:hover, .item-delete:focus-visible { color: var(--danger); background: rgba(239,68,68,0.12); outline: none; }
+  .item-progress-row { display: flex; align-items: center; gap: 8px; padding: 0 30px 2px 2px; }
+  .item-progress-track { flex: 1; height: 3px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden; }
+  .item-progress-fill { height: 100%; border-radius: 99px; background: var(--text-2-strong); transition: width var(--motion-base) var(--ease-standard); }
+  .item-progress-label { flex-shrink: 0; font-size: 0.68rem; color: var(--text-2-strong); font-variant-numeric: tabular-nums; }
+  .accent-gold .item-progress-fill { background: var(--gold); }
+  .accent-emerald .item-progress-fill { background: var(--emerald); }
+  .accent-sky .item-progress-fill { background: var(--sky); }
+  .accent-coral .item-progress-fill { background: var(--coral); }
+
+  /* Wealth item cards */
+  .wealth-list { display: flex; flex-direction: column; gap: var(--space-3); margin-bottom: var(--space-3); }
+  .wealth-item { background: rgba(255,255,255,0.035); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: var(--space-4); transition: opacity var(--motion-fast) var(--ease-standard), transform var(--motion-fast) var(--ease-standard); }
+  .wealth-item.is-entering { opacity: 0; transform: translateY(-4px); }
+  .wealth-item.is-leaving { opacity: 0; transform: scale(0.97); }
+  .wi-head { display: flex; align-items: flex-start; gap: var(--space-3); margin-bottom: var(--space-3); }
+  .wi-icon-badge { width: 34px; height: 34px; border-radius: 10px; background: rgba(52,211,153,0.14); color: var(--emerald); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .wi-title-block { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .wi-title-row { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+  .wi-title-row .item-label { font-family: var(--font-display); font-weight: 700; font-size: 0.94rem; flex: 1 1 140px; }
+  .wi-type-select { background: rgba(255,255,255,0.06); border: 1px solid var(--glass-border); color: var(--text-1); font-size: 0.72rem; border-radius: 7px; padding: 4px 6px; font-family: var(--font-text); flex-shrink: 0; }
+  .wi-type-select:focus { outline: none; border-color: var(--glass-border-strong); }
+  .wi-amount-row { display: flex; align-items: baseline; gap: 4px; }
+  .wi-amount-row .item-amount { width: auto; min-width: 70px; text-align: left; padding: 0; font-size: 0.86rem; }
+  .wi-amount-suffix { font-size: 0.72rem; color: var(--text-2); }
+  .wi-head .item-delete { margin-top: 1px; }
+  .wi-behavior-row { display: flex; align-items: center; gap: 7px; margin-top: 3px; flex-wrap: wrap; }
+  .wi-behavior-select { background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: var(--text-2-strong); font-size: 0.68rem; border-radius: 6px; padding: 3px 6px; font-family: var(--font-text); flex-shrink: 0; }
+  .wi-behavior-select:focus { outline: none; border-color: var(--glass-border-strong); }
+  .wi-behavior-hint { font-size: 0.72rem; color: var(--text-3-strong); font-style: italic; }
+  .kpi-tile[title] { cursor: help; }
+
+  .wi-progress-track { height: 4px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden; margin: 0 0 var(--space-3); }
+  .wi-progress-fill { height: 100%; border-radius: 99px; background: var(--emerald); transition: width var(--motion-base) var(--ease-standard); }
+
+  .wi-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: var(--space-3); }
+  .wi-metric { display: flex; flex-direction: column; gap: 3px; }
+  .wi-metric-label { font-size: 0.66rem; color: var(--text-2-strong); }
+  .wi-metric-input { background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 8px; padding: 6px 8px; color: var(--text-0); font-size: 0.83rem; font-weight: 600; font-variant-numeric: tabular-nums; font-family: var(--font-display); width: 100%; }
+  .wi-metric-input:focus { outline: none; border-color: var(--glass-border-strong); }
+  .wi-metric-readout { font-family: var(--font-display); font-weight: 700; font-size: 0.9rem; padding: 6px 0; font-variant-numeric: tabular-nums; }
+  .wi-metric-readout.is-positive { color: var(--success); }
+  .wi-metric-readout.is-negative { color: var(--danger); }
+  .wi-metric-readout.is-muted { color: var(--text-3-strong); font-weight: 600; }
+  .wi-metric.is-featured { border-left: 3px solid var(--emerald); border-radius: 0 6px 6px 0; background: rgba(52,211,153,0.07); padding: 4px 0 4px 8px; }
+  .wi-metric.is-featured .wi-metric-label { color: var(--text-1); }
+  .wi-metric.is-featured .wi-metric-readout { font-size: 1.08rem; }
+  .wi-metric.is-featured .wi-metric-input { font-size: 0.94rem; border-color: var(--glass-border-strong); }
+
+  .add-item-btn, .add-wealth-btn { width: 100%; border: 1px dashed var(--glass-border-strong); background: transparent; color: var(--text-2-strong); font-size: 0.8rem; padding: 10px 12px; cursor: pointer; min-height: 40px; border-radius: 12px; transition: border-color var(--motion-fast) var(--ease-standard), color var(--motion-fast) var(--ease-standard), background var(--motion-fast) var(--ease-standard); }
+  .add-item-btn:hover, .add-wealth-btn:hover, .add-item-btn:focus-visible, .add-wealth-btn:focus-visible { border-color: var(--emerald); color: var(--text-0); background: rgba(52,211,153,0.06); outline: none; }
+
+  /* Wealth history button + goal-status badge */
+  .wi-history-btn { flex-shrink: 0; border: none; background: transparent; color: var(--text-3); cursor: pointer; width: 26px; height: 26px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-top: 1px; transition: color var(--motion-fast) var(--ease-standard), background var(--motion-fast) var(--ease-standard); }
+  .wi-history-btn:hover, .wi-history-btn:focus-visible { color: var(--emerald); background: rgba(52,211,153,0.12); outline: none; }
+  .wi-history-btn .icon { width: 15px; height: 15px; }
+  .wi-redirect-btn { flex-shrink: 0; border: none; background: transparent; color: var(--text-3); cursor: pointer; width: 26px; height: 26px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-top: 1px; transition: color var(--motion-fast) var(--ease-standard), background var(--motion-fast) var(--ease-standard); }
+  .wi-redirect-btn:hover, .wi-redirect-btn:focus-visible { color: var(--sky); background: rgba(94,168,242,0.12); outline: none; }
+  .wi-redirect-btn .icon { width: 15px; height: 15px; }
+  .wi-status-row { display: flex; align-items: center; gap: 8px; margin: -4px 0 var(--space-3); flex-wrap: wrap; }
+  .wi-status-pill { flex-shrink: 0; font-size: 0.64rem; font-weight: 700; padding: 3px 8px; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.03em; }
+  .wi-status-pill.is-near { background: rgba(232,184,75,0.16); color: var(--gold); }
+  .wi-status-pill.is-reached { background: rgba(52,211,153,0.16); color: var(--emerald); }
+  .wi-status-hint { font-size: 0.74rem; color: var(--text-2-strong); }
+
+  /* Released-capital note (category level) */
+  .wealth-release-note { display: none; margin-bottom: var(--space-3); padding: 10px 14px; border-radius: 12px; background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.25); font-size: 0.79rem; color: var(--text-1); line-height: 1.5; }
+  .wealth-release-note strong { color: var(--emerald); }
+
+  /* History modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(4,7,14,0.66); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: var(--space-4); z-index: 50; opacity: 0; pointer-events: none; transition: opacity var(--motion-base) var(--ease-standard); }
+  .modal-overlay.is-open { opacity: 1; pointer-events: auto; }
+  .modal-panel { width: 100%; max-width: 420px; max-height: 86vh; overflow-y: auto; padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-3); }
+  .modal-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+  .modal-head h3 { font-family: var(--font-display); font-size: 1rem; margin: 0; min-width: 0; }
+  .modal-close { flex-shrink: 0; border: none; background: transparent; color: var(--text-2); font-size: 1.2rem; cursor: pointer; width: 30px; height: 30px; border-radius: 8px; }
+  .modal-close:hover, .modal-close:focus-visible { color: var(--text-0); background: var(--glass-hover); outline: none; }
+  .modal-summary { display: flex; flex-direction: column; gap: 4px; padding: var(--space-3); background: rgba(255,255,255,0.035); border: 1px solid var(--glass-border); border-radius: var(--radius-md); }
+  .modal-summary-row { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--text-1); }
+  .modal-summary-row.is-total { border-top: 1px solid var(--glass-border); margin-top: 4px; padding-top: 6px; font-weight: 700; color: var(--text-0); }
+  .modal-summary-row strong.is-positive { color: var(--success); }
+  .modal-summary-row strong.is-negative { color: var(--danger); }
+  .modal-list { display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; }
+  .modal-empty { font-size: 0.8rem; color: var(--text-3-strong); font-style: italic; padding: var(--space-3) 0; }
+  .modal-entry { position: relative; padding: 8px 30px 8px 10px; border-radius: 10px; background: rgba(255,255,255,0.035); border: 1px solid var(--glass-border); cursor: pointer; }
+  .modal-entry:hover { border-color: var(--glass-border-strong); }
+  .modal-entry-main { display: flex; align-items: center; gap: 8px; }
+  .modal-entry-amount { font-family: var(--font-display); font-weight: 700; font-size: 0.86rem; }
+  .modal-entry-amount.is-positive { color: var(--success); }
+  .modal-entry-amount.is-negative { color: var(--danger); }
+  .modal-entry-kind { font-size: 0.66rem; color: var(--text-2-strong); text-transform: uppercase; letter-spacing: 0.03em; }
+  .modal-entry-meta { font-size: 0.72rem; color: var(--text-2-strong); margin-top: 2px; }
+  .modal-entry-delete { position: absolute; top: 6px; right: 6px; border: none; background: transparent; color: var(--text-3); cursor: pointer; width: 22px; height: 22px; border-radius: 6px; }
+  .modal-entry-delete:hover, .modal-entry-delete:focus-visible { color: var(--danger); background: rgba(239,68,68,0.12); outline: none; }
+  .modal-entry.is-pending { opacity: 0.72; border-style: dashed; }
+  .modal-entry-pending-btn { display: inline-flex; align-items: center; font-size: 0.62rem; font-weight: 700; padding: 2px 7px; border-radius: 99px; text-transform: uppercase; letter-spacing: 0.03em; background: rgba(232,184,75,0.16); color: var(--gold); border: none; cursor: pointer; margin-left: 6px; }
+  .modal-entry-pending-btn:hover, .modal-entry-pending-btn:focus-visible { background: rgba(232,184,75,0.28); outline: none; }
+  .modal-add-form { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--glass-border); padding-top: var(--space-3); }
+  .modal-add-row { display: flex; gap: 8px; }
+  .modal-add-row input, .modal-add-row select, .modal-add-note { flex: 1; min-width: 0; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 8px; padding: 7px 9px; color: var(--text-0); font-size: 0.82rem; font-family: var(--font-text); color-scheme: dark; }
+  .modal-add-row input:focus, .modal-add-row select:focus, .modal-add-note:focus { outline: none; border-color: var(--glass-border-strong); }
+  .modal-add-pending { display: flex; align-items: center; gap: 7px; font-size: 0.76rem; color: var(--text-2-strong); cursor: pointer; padding: 2px 1px; }
+  .modal-add-pending input { accent-color: var(--gold); width: 15px; height: 15px; flex-shrink: 0; }
+  .modal-form-actions { display: flex; align-items: center; gap: 10px; }
+  .modal-form-actions .modal-add-btn { flex: 1; }
+  .modal-cancel-edit { flex-shrink: 0; display: none; border: none; background: transparent; color: var(--text-3); font-size: 0.72rem; cursor: pointer; text-decoration: underline; padding: 4px 2px; }
+  .modal-cancel-edit.is-visible { display: block; }
+  .modal-cancel-edit:hover, .modal-cancel-edit:focus-visible { color: var(--text-1); outline: none; }
+  .modal-pay-row { display: none; align-items: center; gap: 8px; }
+  .modal-pay-row.is-visible { display: flex; }
+  .modal-pay-btn { flex: 1; border: none; background: rgba(232,184,75,0.16); color: var(--gold); font-size: 0.82rem; font-weight: 700; padding: 9px; border-radius: 10px; cursor: pointer; }
+  .modal-pay-btn:hover, .modal-pay-btn:focus-visible { background: rgba(232,184,75,0.28); outline: none; }
+  .modal-pay-edit { flex-shrink: 0; border: none; background: transparent; color: var(--text-3); font-size: 0.68rem; cursor: pointer; padding: 4px 6px; text-decoration: underline; }
+  .modal-pay-edit:hover, .modal-pay-edit:focus-visible { color: var(--text-1); outline: none; }
+  .modal-add-btn { border: 1px dashed var(--glass-border-strong); background: transparent; color: var(--text-1); font-size: 0.82rem; padding: 9px; border-radius: 10px; cursor: pointer; }
+  .modal-add-btn:hover, .modal-add-btn:focus-visible { border-color: var(--emerald); color: var(--text-0); background: rgba(52,211,153,0.06); outline: none; }
+  .modal-hint { margin: 0; font-size: 0.78rem; color: var(--text-2-strong); line-height: 1.5; }
+  .redirect-row { display: flex; align-items: center; gap: 6px; }
+  .redirect-target { flex: 1; min-width: 0; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 8px; padding: 7px 8px; color: var(--text-0); font-size: 0.8rem; font-family: var(--font-text); color-scheme: dark; }
+  .redirect-target:focus { outline: none; border-color: var(--glass-border-strong); }
+  .redirect-pct { width: 52px; flex-shrink: 0; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 8px; padding: 7px 6px; color: var(--text-0); font-size: 0.8rem; text-align: right; font-family: var(--font-display); font-weight: 700; }
+  .redirect-pct:focus { outline: none; border-color: var(--glass-border-strong); }
+  .redirect-pct-suffix { flex-shrink: 0; font-size: 0.76rem; color: var(--text-2-strong); }
+  .redirect-remove { flex-shrink: 0; border: none; background: transparent; color: var(--text-3); cursor: pointer; width: 24px; height: 24px; border-radius: 7px; }
+  .redirect-remove:hover, .redirect-remove:focus-visible { color: var(--danger); background: rgba(239,68,68,0.12); outline: none; }
+  .redirect-total { font-size: 0.76rem; color: var(--text-2-strong); text-align: right; }
+  .redirect-total.is-off { color: var(--gold); }
+  .redirect-total.is-ok { color: var(--emerald); }
+
+  /* Footer */
+  .app-footer { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; padding: var(--space-4) var(--space-5); }
+  .ghost-btn { border: 1px solid var(--glass-border-strong); background: transparent; color: var(--text-0); font-size: 0.8rem; padding: 10px 18px; border-radius: 10px; cursor: pointer; min-height: 42px; transition: background var(--motion-fast) var(--ease-standard); }
+  .ghost-btn:hover, .ghost-btn:focus-visible { background: var(--glass-hover); }
+  .save-indicator { font-size: 0.76rem; color: var(--text-2-strong); transition: color var(--motion-base) var(--ease-standard); }
+  .save-indicator.is-saved-flash { color: var(--success); }
+
+  a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
+    outline: 2px solid var(--emerald); outline-offset: 2px;
+  }
+
+  @keyframes riseIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .enter-rise { animation: riseIn var(--motion-slow) var(--ease-decelerate) both; animation-delay: calc(var(--i, 0) * 45ms); }
+  /* emphasis — use for: crossing into over-budget, once per crossing; never for: routine updates or looping */
+  @keyframes pulseAlert { 0% { transform: scale(1); } 45% { transform: scale(1.05); } 100% { transform: scale(1); } }
+  .pulse-alert { animation: pulseAlert var(--motion-slow) var(--ease-spring); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 80ms !important; }
+  }
+
+  @media (max-width: 720px) {
+    .kpi-tiles { grid-template-columns: repeat(2, 1fr); }
+    .principles { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 560px) {
+    .topbar-inner { padding: var(--space-3) var(--space-4); }
+    #netIncome, #budgetMonth { width: 108px; }
+    .cat-header { padding: var(--space-3) var(--space-4); gap: var(--space-3); }
+    .cat-rail { font-size: 1.25rem; width: 24px; }
+    .cat-icon-badge { width: 36px; height: 36px; }
+    .cat-body { padding: var(--space-3) var(--space-4) var(--space-4); }
+    .item-amount { width: 84px; }
+    .overview-panel { padding: var(--space-4); }
+    .overview-top { flex-wrap: nowrap; align-items: flex-start; gap: var(--space-3); }
+    .overview-ring { width: 60px; height: 60px; }
+    .ring-pct { font-size: 0.8rem; }
+    .ring-caption { font-size: 0.5rem; }
+  }
+</style>
+</head>
+<body>
+  <div class="bg-field"></div>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="brand-mark"><svg class="icon" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/></svg></div>
+        <div>
+          <h1>Budget Ledger</h1>
+          <p class="brand-sub">Give first. Save before you spend.</p>
+        </div>
+      </div>
+      <div class="field-group">
+        <div class="field">
+          <label for="budgetMonth">Budget month</label>
+          <div class="field-shell"><input id="budgetMonth" type="month" value="2026-09"></div>
+        </div>
+        <div class="field">
+          <label for="netIncome">Net income (RWF)</label>
+          <div class="field-shell"><span class="rwf-prefix">RWF</span><input id="netIncome" type="text" inputmode="numeric" aria-label="Net income in RWF"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="overview-panel glass" aria-label="Financial overview">
+      <div class="overview-top">
+        <div class="overview-hero">
+          <span class="overview-label">Net income</span>
+          <span class="overview-value" id="overviewIncome">RWF 0</span>
+          <div class="overview-month" id="overviewMonth"></div>
+        </div>
+        <div class="overview-ring" aria-hidden="true">
+          <svg viewBox="0 0 120 120">
+            <circle class="ring-track" cx="60" cy="60" r="52"></circle>
+            <circle class="ring-fill" id="ringFill" cx="60" cy="60" r="52" transform="rotate(-90 60 60)"></circle>
+          </svg>
+          <div class="ring-label">
+            <span class="ring-pct" id="ringPct">0%</span>
+            <span class="ring-caption" id="ringCaption">allocated</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="kpi-tiles">
+        <div class="kpi-tile" id="tileAllocated">
+          <span class="kpi-tile-label"><svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Allocated</span>
+          <span class="kpi-tile-value" id="allocatedValue">RWF 0</span>
+          <span class="kpi-tile-sub" id="allocatedPct">0% of income</span>
+        </div>
+        <div class="kpi-tile" id="tileWealth">
+          <span class="kpi-tile-label"><svg class="icon" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/></svg>Wealth building</span>
+          <span class="kpi-tile-value" id="wealthValue">RWF 0</span>
+          <span class="kpi-tile-sub" id="wealthPct">0% of income</span>
+          <svg class="wealth-spark" id="wealthSpark" viewBox="0 0 100 24" aria-hidden="true"><title>Wealth building trend across recorded months</title></svg>
+        </div>
+        <div class="kpi-tile" id="tileBalance" title="Not assigned anywhere in the plan — yours to keep, spend, or invest, on your own timing. The system doesn't decide for you.">
+          <span class="kpi-tile-label"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Freedom</span>
+          <span class="kpi-tile-value" id="balanceValue">RWF 0</span>
+          <span class="kpi-tile-sub" id="balanceSub">of net income</span>
+        </div>
+        <div class="kpi-tile" id="tilePortfolio">
+          <span class="kpi-tile-label"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>Portfolio value</span>
+          <span class="kpi-tile-value" id="portfolioValue">RWF 0</span>
+          <span class="kpi-tile-sub" id="portfolioSub">tracked wealth items</span>
+        </div>
+      </div>
+
+      <div class="composition-bar" id="compositionBar"></div>
+      <div class="composition-legend" id="compositionLegend"></div>
+    </section>
+
+    <section class="principles-strip glass" id="principlesStrip">
+      <button type="button" class="principles-toggle" id="principlesToggle" aria-expanded="false" aria-controls="principlesBody">
+        <span class="principles-icon" id="principlesIconInfo"></span>
+        <span class="principles-summary">Give first, save before you spend, cover the essentials, then leave room to enjoy it.</span>
+        <span class="principles-chevron" id="principlesChevronWrap"></span>
+      </button>
+      <div class="principles-body-wrap" id="principlesBodyWrap">
+        <div class="principles-body-inner">
+          <div class="principles" id="principlesBody" aria-label="Why this order works">
+            <div class="principle accent-gold">
+              <strong><svg class="icon accent-gold-fg" viewBox="0 0 24 24"><path d="M12 21s-7-4.4-9.5-8.6C1 9.4 2.2 6 5.8 6c2 0 3.6 1.4 4.5 3 1-1.6 2.6-3 4.6-3 3.5 0 4.8 3.4 3.3 6.4C19 16.6 12 21 12 21z"/></svg>Give first</strong>
+              <p>It comes out before anything else touches the income, so it's never a decision made from what's left over.</p>
+            </div>
+            <div class="principle accent-emerald">
+              <strong><svg class="icon accent-emerald-fg" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/></svg>Save before you spend</strong>
+              <p>Real estate, emergency, and long-term money is set aside while the income is still whole.</p>
+            </div>
+            <div class="principle accent-sky">
+              <strong><svg class="icon accent-sky-fg" viewBox="0 0 24 24"><path d="M13 2L3 14h7l-1 8 11-14h-7l1-8z"/></svg>Cover the essentials</strong>
+              <p>Rent, food, fuel, and health are sized to what's realistic, after giving and saving are locked in.</p>
+            </div>
+            <div class="principle accent-coral">
+              <strong><svg class="icon accent-coral-fg" viewBox="0 0 24 24"><path d="M4 9h12v6a4 4 0 01-4 4H8a4 4 0 01-4-4V9z"/><path d="M16 10h2a2 2 0 010 4h-2"/></svg>Leave room to enjoy it</strong>
+              <p>A real, capped allowance. Cut it to zero and the whole plan usually collapses within a quarter.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="categories" id="categories"></section>
+
+    <footer class="app-footer glass">
+      <button type="button" id="resetBtn" class="ghost-btn">Reset to original plan</button>
+      <button type="button" id="dataBtn" class="ghost-btn">Data &amp; backups</button>
+      <span class="save-indicator" id="saveIndicator">Ready</span>
+    </footer>
+  </main>
+
+  <div class="modal-overlay" id="historyModalOverlay" aria-hidden="true">
+    <div class="modal-panel glass" role="dialog" aria-modal="true" aria-labelledby="historyModalTitle">
+      <div class="modal-head">
+        <h3 id="historyModalTitle">History</h3>
+        <button type="button" class="modal-close" id="historyModalClose" aria-label="Close history">&times;</button>
+      </div>
+      <div class="modal-summary" id="historyModalSummary"></div>
+      <div class="modal-list" id="historyModalList"></div>
+      <form class="modal-add-form" id="historyAddForm">
+        <div class="modal-add-row">
+          <input type="date" id="hEntryDate" aria-label="Entry date" required>
+          <select id="hEntryKind" aria-label="Entry type">
+            <option value="contribution">Contribution</option>
+            <option value="growth">Growth</option>
+            <option value="withdrawal">Withdrawal</option>
+          </select>
+        </div>
+        <div class="modal-add-row">
+          <input type="text" inputmode="numeric" id="hEntryAmount" placeholder="Amount (RWF)" aria-label="Amount in RWF" required>
+          <select id="hEntryMethod" aria-label="Payment method">
+            <option value="">Method (optional)</option>
+            <option value="bpr">BPR</option>
+            <option value="momo">MTN MoMo</option>
+            <option value="airtel">Airtel Money</option>
+            <option value="cash">Cash</option>
+            <option value="bank">Bank transfer</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="modal-pay-row" id="hPayRow">
+          <button type="button" class="modal-pay-btn" id="hPayHandoffBtn">Pay</button>
+          <button type="button" class="modal-pay-edit" id="hPayEditCode">edit code</button>
+        </div>
+        <label class="modal-add-pending" for="hEntryPending">
+          <input type="checkbox" id="hEntryPending">
+          <span>Pending confirmation — don't count toward total yet</span>
+        </label>
+        <input type="text" id="hEntryNote" placeholder="Note / reference number (optional)" class="modal-add-note" aria-label="Note or reference number">
+        <div class="modal-form-actions">
+          <button type="submit" class="modal-add-btn" id="hFormSubmitBtn">+ Add entry</button>
+          <button type="button" class="modal-cancel-edit" id="hFormCancelEdit">Cancel edit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="dataModalOverlay" aria-hidden="true">
+    <div class="modal-panel glass" role="dialog" aria-modal="true" aria-labelledby="dataModalTitle">
+      <div class="modal-head">
+        <h3 id="dataModalTitle">Data &amp; backups</h3>
+        <button type="button" class="modal-close" id="dataModalClose" aria-label="Close data panel">&times;</button>
+      </div>
+      <p class="modal-hint" id="dataStatus"></p>
+      <div class="modal-form-actions" style="flex-wrap:wrap;gap:8px">
+        <button type="button" class="modal-add-btn" id="dataExportJson">Export backup (JSON)</button>
+        <button type="button" class="modal-add-btn" id="dataExportCsv">Export ledger (CSV)</button>
+        <button type="button" class="modal-add-btn" id="dataImport">Import backup</button>
+      </div>
+      <input type="file" id="dataImportFile" accept="application/json,.json" hidden>
+      <p class="modal-hint" style="margin-top:14px">Restore points</p>
+      <div class="modal-list" id="dataSnapList"></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="redirectModalOverlay" aria-hidden="true">
+    <div class="modal-panel glass" role="dialog" aria-modal="true" aria-labelledby="redirectModalTitle">
+      <div class="modal-head">
+        <h3 id="redirectModalTitle">Redirect priority</h3>
+        <button type="button" class="modal-close" id="redirectModalClose" aria-label="Close redirect settings">&times;</button>
+      </div>
+      <p class="modal-hint" id="redirectModalHint"></p>
+      <div class="modal-list" id="redirectModalList"></div>
+      <div class="redirect-total" id="redirectModalTotal"></div>
+      <button type="button" class="modal-add-btn" id="redirectAddRow">+ Add destination</button>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var STORAGE_KEY = 'budget-ledger-state-v3';
+
+    function uid() { return 'i' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+    var ICON_PATHS = {
+      heart: ['M12 21s-7-4.4-9.5-8.6C1 9.4 2.2 6 5.8 6c2 0 3.6 1.4 4.5 3 1-1.6 2.6-3 4.6-3 3.5 0 4.8 3.4 3.3 6.4C19 16.6 12 21 12 21z'],
+      trendingUp: ['M3 17l6-6 4 4 8-8', 'M17 7h4v4'],
+      home: ['M3 11l9-8 9 8', 'M5 10v10h14V10'],
+      zap: ['M13 2L3 14h7l-1 8 11-14h-7l1-8z'],
+      cup: ['M4 9h12v6a4 4 0 01-4 4H8a4 4 0 01-4-4V9z', 'M16 10h2a2 2 0 010 4h-2', 'M8 3c0 1-1 1-1 2', 'M12 3c0 1-1 1-1 2'],
+      shield: ['M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z'],
+      clock: ['M12 21a9 9 0 100-18 9 9 0 000 18z', 'M12 7v5l3 3'],
+      briefcase: ['M3 7h18v13H3z', 'M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2', 'M3 13h18'],
+      book: ['M12 6c-2-2-5-2-8-1v13c3-1 6-1 8 1 2-2 5-2 8-1V5c-3-1-6-1-8 1z', 'M12 6v13'],
+      star: ['M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z'],
+      chevron: ['M6 9l6 6 6-6'],
+      info: ['M12 21a9 9 0 100-18 9 9 0 000 18z', 'M12 11v5', 'M12 7.5h.01'],
+      target: ['M12 21a9 9 0 100-18 9 9 0 000 18z', 'M12 17a5 5 0 100-10 5 5 0 000 10z', 'M12 13a1 1 0 100-2 1 1 0 000 2z']
+    };
+
+    function iconSVG(name, cls) {
+      var paths = ICON_PATHS[name] || ICON_PATHS.star;
+      var d = paths.map(function (p) { return '<path d="' + p + '"/>'; }).join('');
+      return '<svg class="icon' + (cls ? ' ' + cls : '') + '" viewBox="0 0 24 24">' + d + '</svg>';
+    }
+
+    var WEALTH_TYPES = {
+      realEstate: { label: 'Real estate', icon: 'home', showROI: true, defaultBehavior: 'appreciator' },
+      emergency:  { label: 'Emergency fund', icon: 'shield', showROI: false, defaultBehavior: 'reserve' },
+      investment: { label: 'Long-term investment', icon: 'trendingUp', showROI: true, defaultBehavior: 'appreciator' },
+      marriage:   { label: 'Marriage', icon: 'heart', showROI: false, defaultBehavior: 'reserve' },
+      retirement: { label: 'Retirement', icon: 'clock', showROI: false, defaultBehavior: 'reserve' },
+      business:   { label: 'Business capital', icon: 'briefcase', showROI: true, defaultBehavior: 'generator' },
+      human:      { label: 'Human capital', icon: 'book', showROI: false, defaultBehavior: 'reserve' },
+      custom:     { label: 'Custom', icon: 'star', showROI: true, defaultBehavior: 'appreciator' }
+    };
+
+    // A goal (target) only ever governs future contributions — it never
+    // redefines what kind of asset this is. That's a separate, explicit
+    // dimension: how the asset itself creates wealth.
+    var ASSET_BEHAVIORS = {
+      generator:   { label: 'Money generator',   growthLabel: 'growth',               hint: 'Produces income on its own — rent, interest, dividends.' },
+      appreciator: { label: 'Value appreciator',  growthLabel: 'capital appreciation', hint: 'Value can rise or fall; it may not produce monthly cash.' },
+      reserve:     { label: 'Capital reserve',    growthLabel: 'growth',               hint: 'Held for preservation and access, not growth.' }
+    };
+
+    function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+    // Guarantees item.behavior is a real key (falling back to the asset
+    // type's default the first time it's seen) and returns that behavior.
+    function ensureBehavior(item) {
+      if (!ASSET_BEHAVIORS[item.behavior]) {
+        var t = WEALTH_TYPES[item.type] || WEALTH_TYPES.custom;
+        item.behavior = t.defaultBehavior || 'appreciator';
+      }
+      return ASSET_BEHAVIORS[item.behavior];
+    }
+
+    function behaviorOptions(selected) {
+      return Object.keys(ASSET_BEHAVIORS).map(function (key) {
+        return '<option value="' + key + '"' + (key === selected ? ' selected' : '') + '>' + ASSET_BEHAVIORS[key].label + '</option>';
+      }).join('');
+    }
+
+    var CAT_ICONS = { give: 'heart', save: 'trendingUp', essential: 'zap', lifestyle: 'cup' };
+
+    var HISTORY_KINDS = {
+      contribution: { label: 'Contribution', sign: 1 },
+      growth: { label: 'Growth', sign: 1 },
+      withdrawal: { label: 'Withdrawal', sign: -1 }
+    };
+
+    var PAYMENT_METHODS = {
+      bpr: 'BPR',
+      momo: 'MTN MoMo',
+      airtel: 'Airtel Money',
+      cash: 'Cash',
+      bank: 'Bank transfer',
+      other: 'Other'
+    };
+
+    // Methods with a phone-dial handoff. Codes are generic USSD root menus —
+    // not verified for every SIM/region — the edit-code link lets the user
+    // swap in their own known-working code, with {amount} as a placeholder.
+    var QUICK_DIAL_DEFAULTS = { momo: '*182#', airtel: '*500#' };
+
+    function defaultState() {
+      return {
+        netIncome: 100000,
+        month: '2026-09',
+        history: [],
+        quickDial: { momo: '*182#', airtel: '*500#' },
+        categories: [
+          {
+            id: 'give', name: 'Non-Negotiable', accent: 'gold',
+            caption: 'Given before anything else moves',
+            items: [
+              { id: uid(), label: 'Tithe', amount: 10000 },
+              { id: uid(), label: 'Offerings', amount: 500 },
+              { id: uid(), label: 'Giving', amount: 1250 }
+            ]
+          },
+          {
+            id: 'save', name: 'Wealth Building', accent: 'emerald',
+            caption: 'Paid to your future self, second — real estate stays central',
+            items: [
+              { id: uid(), label: 'Real Estate Savings', amount: 37500, type: 'realEstate', behavior: 'appreciator', target: 0, current: 0, contributed: 0, expectedReturn: 0, history: [], redirects: [] },
+              { id: uid(), label: 'Emergency Fund', amount: 5000, type: 'emergency', behavior: 'reserve', target: 0, current: 0, contributed: 0, expectedReturn: 0, history: [], redirects: [] },
+              { id: uid(), label: 'Long-Term Investment', amount: 7500, type: 'investment', behavior: 'appreciator', target: 0, current: 0, contributed: 0, expectedReturn: 0, history: [], redirects: [] },
+              { id: uid(), label: 'Marriage & Retirement Savings', amount: 7500, type: 'marriage', behavior: 'reserve', target: 0, current: 0, contributed: 0, expectedReturn: 0, history: [], redirects: [] }
+            ]
+          },
+          {
+            id: 'essential', name: 'Essentials', accent: 'sky',
+            caption: 'What keeps the lights on',
+            items: [
+              { id: uid(), label: 'Rent', amount: 5000 },
+              { id: uid(), label: 'Food & Groceries', amount: 7500 },
+              { id: uid(), label: 'Fuel & Car Maintenance', amount: 5000 },
+              { id: uid(), label: 'Health (Medical, Medications)', amount: 2500 },
+              { id: uid(), label: 'Personal Care (Toiletries, Grooming)', amount: 2500 },
+              { id: uid(), label: 'Internet', amount: 1250 }
+            ]
+          },
+          {
+            id: 'lifestyle', name: 'Lifestyle', accent: 'coral',
+            caption: 'The reward that keeps you going, on a leash',
+            items: [
+              { id: uid(), label: 'Eating Out / Treats', amount: 2500 },
+              { id: uid(), label: 'Entertainment (Movies, Games, Subscriptions)', amount: 1250 },
+              { id: uid(), label: 'Personal Growth (Books, Courses)', amount: 2500 }
+            ]
+          }
+        ]
+      };
+    }
+
+    var state = null;
+    var saveTimer = null;
+    var openCat = 'save';
+    var wasOverBudget = false;
+    var dbRef = null;
+    var usingDb = false;
+
+    function formatNum(n) { n = Number(n) || 0; return n.toLocaleString('en-US'); }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    function formatAndReposition(input) {
+      var raw = input.value;
+      var caret = input.selectionStart == null ? raw.length : input.selectionStart;
+      var digitsBeforeCaret = raw.slice(0, caret).replace(/[^\d]/g, '').length;
+      var digitsOnly = raw.replace(/[^\d]/g, '');
+      var formatted = digitsOnly ? Number(digitsOnly).toLocaleString('en-US') : '';
+      input.value = formatted;
+      var pos = 0, count = 0;
+      while (pos < formatted.length && count < digitsBeforeCaret) {
+        if (/\d/.test(formatted[pos])) count++;
+        pos++;
+      }
+      try { input.setSelectionRange(pos, pos); } catch (e) {}
+      return digitsOnly ? Number(digitsOnly) : 0;
+    }
+
+    function normalizeHistoryEntry(h) {
+      h.amount = Math.abs(Number(h.amount) || 0);
+      if (!HISTORY_KINDS[h.kind]) h.kind = 'contribution';
+      if (!h.id) h.id = uid();
+      if (!h.date) h.date = '2026-01-01';
+      h.method = h.method || '';
+      h.note = h.note || '';
+      h.pending = !!h.pending;
+    }
+
+    function normalizeState(parsed) {
+      var base = defaultState();
+      if (!parsed || !Array.isArray(parsed.categories)) return base;
+      sanitizeState(parsed);
+      if (!Array.isArray(parsed.history)) parsed.history = [];
+      if (!parsed.quickDial || typeof parsed.quickDial !== 'object') parsed.quickDial = {};
+      Object.keys(QUICK_DIAL_DEFAULTS).forEach(function (k) {
+        if (!parsed.quickDial[k]) parsed.quickDial[k] = QUICK_DIAL_DEFAULTS[k];
+      });
+      parsed.categories.forEach(function (cat) {
+        cat.items.forEach(function (item) {
+          if (!Array.isArray(item.history)) item.history = [];
+          item.history.forEach(normalizeHistoryEntry);
+          if (!item.quickDial || typeof item.quickDial !== 'object') item.quickDial = {};
+        });
+        if (cat.id === 'save') {
+          cat.items.forEach(function (item) {
+            if (!WEALTH_TYPES[item.type]) item.type = 'custom';
+            ensureBehavior(item);
+            item.target = Number(item.target) || 0;
+            item.current = Number(item.current) || 0;
+            item.contributed = Number(item.contributed) || 0;
+            item.expectedReturn = Number(item.expectedReturn) || 0;
+            syncItemFromHistory(item);
+          });
+          var validIds = cat.items.map(function (i) { return i.id; });
+          cat.items.forEach(function (item) {
+            if (!Array.isArray(item.redirects)) item.redirects = [];
+            item.redirects = item.redirects.filter(function (r) {
+              return r && typeof r.id === 'string' && r.id !== item.id && validIds.indexOf(r.id) > -1;
+            }).map(function (r) { return { id: r.id, pct: Number(r.pct) || 0 }; });
+          });
+        }
+        if (!cat.caption) {
+          var defCat = base.categories.find(function (c) { return c.id === cat.id; });
+          cat.caption = defCat ? defCat.caption : '';
+        }
+      });
+      return parsed;
+    }
+
+    function categoryTotal(cat) {
+      return cat.items.reduce(function (sum, it) { return sum + (Number(it.amount) || 0); }, 0);
+    }
+
+    /* ================= DATA LAYER =================
+       Offline-first, versioned, self-healing persistence.
+       device (IndexedDB + localStorage mirror) is always written; the per-viewer
+       cloud doc is layered on when available. Newest revision wins on load. */
+
+    var SCHEMA = 4, DB_NAME = 'budget-ledger', SNAP_MAX = 12, SNAP_GAP = 6 * 3600e3, CLOUD_MAX = 240000;
+    var MIGRATIONS = { 3: function (s) { /* v3 -> v4: revision metadata added by ensureMeta */ } };
+    var deviceId = (function () {
+      try { var k = 'budget-ledger-device', d = localStorage.getItem(k); if (!d) { d = uid(); localStorage.setItem(k, d); } return d; } catch (e) { return uid(); }
+    })();
+
+    function num(v) { v = Number(v); return isFinite(v) ? v : 0; }
+    function money(v) { return Math.max(0, Math.round(num(v))); }
+    function str(v, max) { return String(v == null ? '' : v).slice(0, max); }
+    function clone(o) { return JSON.parse(JSON.stringify(o)); }
+    function bodyOf(s) { return JSON.stringify(s, function (k, v) { return k === 'meta' ? undefined : v; }); }
+    function hash(s) { var h = 0x811c9dc5; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(16); }
+
+    function ensureMeta(s) {
+      var m = (s.meta && typeof s.meta === 'object') ? s.meta : {};
+      var v = num(m.schema) || 3;
+      while (v < SCHEMA) { if (MIGRATIONS[v]) MIGRATIONS[v](s); v++; }
+      s.meta = { schema: SCHEMA, rev: Math.max(0, Math.floor(num(m.rev))), updatedAt: num(m.updatedAt), device: str(m.device, 40) };
+      return s;
+    }
+
+    // Structural validation: anything read from disk, cloud, another tab or an
+    // import file is untrusted. Coerces types, clamps numbers, drops junk.
+    function sanitizeState(s) {
+      var base = defaultState(), seen = {};
+      s.netIncome = money(s.netIncome);
+      s.month = /^\d{4}-\d{2}$/.test(s.month) ? s.month : base.month;
+      s.history = (Array.isArray(s.history) ? s.history : []).filter(function (h) { return h && typeof h.month === 'string'; })
+        .map(function (h) { return { month: h.month.slice(0, 7), wealth: num(h.wealth), allocated: num(h.allocated) }; });
+      s.categories = s.categories.filter(function (c) { return c && typeof c.id === 'string' && Array.isArray(c.items); });
+      base.categories.forEach(function (bc) {
+        if (!s.categories.some(function (c) { return c.id === bc.id; })) s.categories.push(bc);
+      });
+      s.categories.forEach(function (cat) {
+        var def = base.categories.find(function (c) { return c.id === cat.id; }) || {};
+        cat.name = str(cat.name || def.name, 60);
+        cat.accent = /^(gold|emerald|sky|coral)$/.test(cat.accent) ? cat.accent : (def.accent || 'sky');
+        cat.items = cat.items.filter(function (i) { return i && typeof i === 'object'; });
+        cat.items.forEach(function (it) {
+          if (typeof it.id !== 'string' || !it.id || seen[it.id]) it.id = uid();
+          seen[it.id] = 1;
+          it.label = str(it.label, 80);
+          it.amount = money(it.amount);
+          ['target', 'current', 'contributed', 'expectedReturn'].forEach(function (k) { if (k in it) it[k] = num(it[k]); });
+          it.history = (Array.isArray(it.history) ? it.history : []).filter(function (h) { return h && typeof h === 'object'; }).slice(0, 5000);
+          it.history.forEach(function (h) { h.amount = Math.abs(num(h.amount)); h.date = str(h.date, 10); h.note = str(h.note, 200); });
+        });
+      });
+      return ensureMeta(s);
+    }
+
+    /* ---- storage adapters ---- */
+    var idb = null, cloud = null;
+    function openIDB() {
+      return new Promise(function (res) {
+        try {
+          var r = indexedDB.open(DB_NAME, 1);
+          r.onupgradeneeded = function () { r.result.createObjectStore('kv'); r.result.createObjectStore('snaps', { keyPath: 'at' }); };
+          r.onsuccess = function () { res(r.result); };
+          r.onerror = r.onblocked = function () { res(null); };
+        } catch (e) { res(null); }
+      });
+    }
+    function tx(store, mode, fn) {
+      return new Promise(function (res, rej) {
+        if (!idb) return rej(new Error('no idb'));
+        var t = idb.transaction(store, mode), o = fn(t.objectStore(store));
+        t.oncomplete = function () { res(o && o.result); };
+        t.onerror = t.onabort = function () { rej(t.error); };
+      });
+    }
+    var local = {
+      read: async function () {
+        if (idb) { try { var v = await tx('kv', 'readonly', function (s) { return s.get('state'); }); if (v) return v; } catch (e) {} }
+        try { var raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
+      },
+      write: async function (st) {
+        var ok = false;
+        if (idb) { try { await tx('kv', 'readwrite', function (s) { return s.put(st, 'state'); }); ok = true; } catch (e) {} }
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); ok = true; } catch (e) {}
+        if (!ok) throw new Error('device write failed');
+      }
+    };
+    async function initCloud() {
+      try {
+        if (!window.claude || !window.claude.use) return;
+        var u = await window.claude.use('user'), d = await window.claude.use('db');
+        if (!u || !d) return;
+        var id = await u.id();
+        if (id) cloud = { ref: d.doc('data/users/' + id + '/ledger') };
+      } catch (e) { /* cloud unavailable — device storage only */ }
+    }
+
+    /* ---- load: newest revision across all stores wins ---- */
+    var lastBody = '', dirty = false, inflight = false, needCloud = false, retry = 0, retryTimer = null;
+
+    async function loadState() {
+      idb = await openIDB();
+      await initCloud();
+      try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+      var cands = [];
+      var l = await local.read().catch(function () { return null; });
+      if (l && Array.isArray(l.categories)) cands.push({ src: 'device', s: l });
+      if (cloud) {
+        try {
+          var snap = await cloud.ref.get();
+          var d = snap.exists && snap.data();
+          if (d && Array.isArray(d.categories)) cands.push({ src: 'cloud', s: clone(d) });
+        } catch (e) {}
+      }
+      cands.sort(function (a, b) {
+        var ma = a.s.meta || {}, mb = b.s.meta || {};
+        return (num(mb.rev) - num(ma.rev)) || (num(mb.updatedAt) - num(ma.updatedAt)) || (a.src === 'cloud' ? -1 : 1);
+      });
+      for (var i = 0; i < cands.length; i++) {
+        try {
+          var st = ensureMeta(normalizeState(cands[i].s));
+          lastBody = bodyOf(st);
+          if (cloud && (cands[i].src === 'device' || cands.length < 2)) needCloud = true;      // push device data up
+          if (cands[i].src === 'cloud') { dirty = true; lastBody = ''; }                        // mirror cloud data down
+          return st;
+        } catch (e) { /* corrupt candidate — try the next one */ }
+      }
+      var fresh = ensureMeta(defaultState());
+      lastBody = bodyOf(fresh);
+      return fresh;
+    }
+
+    /* ---- save engine: coalesced, serialized, retried, flushed on hide ---- */
+    function setStatus(t, flash) {
+      var el = document.getElementById('saveIndicator');
+      if (!el) return;
+      el.textContent = t;
+      el.classList.toggle('is-saved-flash', !!flash);
+      if (flash) setTimeout(function () { el.classList.remove('is-saved-flash'); }, 700);
+    }
+
+    function scheduleSave() {
+      dirty = true;
+      setStatus('Saving…');
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(flush, 400);
+    }
+
+    async function flush() {
+      if (inflight || !state) return;
+      var body = bodyOf(state);
+      if (!dirty && !needCloud) return;
+      if (body === lastBody && !needCloud) { dirty = false; setStatus('Saved'); return; }
+      inflight = true; dirty = false;
+      state.meta = ensureMeta(state).meta;
+      var changed = body !== lastBody;
+      if (changed) { state.meta.rev++; state.meta.updatedAt = Date.now(); state.meta.device = deviceId; }
+      var snap = clone(state), localOk = false, cloudOk = !cloud;
+      try { await local.write(snap); localOk = true; lastBody = body; } catch (e) {}
+      if (cloud) {
+        if (JSON.stringify(snap).length > CLOUD_MAX) { cloudOk = false; setStatus('Ledger too large to sync — saved on device'); }
+        else {
+          try { await cloud.ref.set(snap); cloudOk = true; needCloud = false; retry = 0; }
+          catch (e) {
+            var code = e && e.code;
+            if (code === 'invalid_argument' || code === 'revoked' || code === 'not_granted' || code === 'capability_disabled') { cloud = null; cloudOk = true; }
+            else { needCloud = true; retry = Math.min(retry + 1, 6); clearTimeout(retryTimer); retryTimer = setTimeout(flush, Math.min(60000, 1000 * Math.pow(2, retry)) + Math.random() * 500); }
+          }
+        }
+      }
+      inflight = false;
+      if (!localOk && !cloudOk) setStatus('Not saved — kept for this session only');
+      else if (!cloudOk) setStatus('Saved on device · sync pending');
+      else setStatus('Saved', true);
+      if (localOk && changed && bc) try { bc.postMessage({ rev: state.meta.rev, device: deviceId }); } catch (e) {}
+      if (localOk && changed) snapshot('autosave');
+      if (dirty) flush();
+    }
+
+    // Last-chance synchronous write when the tab is hidden/closed, then async flush.
+    function flushOnHide() {
+      if (!state) return;
+      clearTimeout(saveTimer);
+      if (dirty) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {} }
+      flush();
+    }
+
+    /* ---- snapshots (rolling local restore points) ---- */
+    async function snapshot(reason, force) {
+      if (!idb || !state) return;
+      try {
+        var all = (await tx('snaps', 'readonly', function (s) { return s.getAll(); })) || [];
+        var last = all.length ? Math.max.apply(null, all.map(function (x) { return x.at; })) : 0;
+        if (!force && Date.now() - last < SNAP_GAP) return;
+        await tx('snaps', 'readwrite', function (s) { return s.put({ at: Date.now(), reason: reason, data: clone(state) }); });
+        all.sort(function (a, b) { return a.at - b.at; });
+        var extra = all.length + 1 - SNAP_MAX;
+        if (extra > 0) await tx('snaps', 'readwrite', function (s) { all.slice(0, extra).forEach(function (x) { s.delete(x.at); }); return null; });
+      } catch (e) {}
+    }
+    async function listSnapshots() {
+      try { return ((await tx('snaps', 'readonly', function (s) { return s.getAll(); })) || []).sort(function (a, b) { return b.at - a.at; }); } catch (e) { return []; }
+    }
+
+    /* ---- adopt state from another tab/device/import/snapshot ---- */
+    function applyState(next) {
+      state = ensureMeta(next);
+      document.getElementById('netIncome').value = formatNum(state.netIncome);
+      document.getElementById('budgetMonth').value = state.month;
+      renderAll();
+    }
+    function adoptRemote(raw) {
+      if (dirty || inflight || historyModalCtx || redirectModalCtx) return;
+      try {
+        var next = ensureMeta(normalizeState(raw));
+        if (next.meta.rev <= state.meta.rev) return;
+        lastBody = bodyOf(next);
+        applyState(next);
+        setStatus('Updated from another session', true);
+      } catch (e) {}
+    }
+    var bc = null;
+    function startSync() {
+      try {
+        if (window.BroadcastChannel) {
+          bc = new BroadcastChannel('budget-ledger');
+          bc.onmessage = async function (e) {
+            if (e.data && e.data.device !== deviceId && e.data.rev > state.meta.rev) adoptRemote(await local.read());
+          };
+        }
+      } catch (e) {}
+      if (cloud) {
+        try {
+          cloud.ref.onSnapshot(function (snap) {
+            var d = snap.exists && snap.data();
+            if (!d || snap.metadata.hasPendingWrites || (d.meta && d.meta.device === deviceId)) return;
+            adoptRemote(clone(d));
+          }, function () {});
+        } catch (e) {}
+      }
+      document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') flushOnHide(); });
+      window.addEventListener('pagehide', flushOnHide);
+      window.addEventListener('online', function () { if (needCloud) flush(); });
+    }
+
+    /* ---- export / import / CSV ---- */
+    async function saveFile(name, text, mime) {
+      try {
+        var d = (window.claude && window.claude.use) ? await window.claude.use('downloads') : null;
+        if (d) { await d.save({ filename: name, data: text }); return; }
+      } catch (e) { if (e && e.code === 'declined') return; }
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([text], { type: mime }));
+      a.download = name;
+      document.body.appendChild(a); a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    }
+    function exportJSON() {
+      var body = bodyOf(state);
+      saveFile('budget-ledger-' + (state.month || 'backup') + '.json',
+        JSON.stringify({ app: 'budget-ledger', schema: SCHEMA, exportedAt: new Date().toISOString(), checksum: hash(body), state: JSON.parse(body) }, null, 2),
+        'application/json');
+    }
+    function csvCell(v) {
+      v = String(v == null ? '' : v);
+      if (/^[=+\-@\t\r]/.test(v)) v = "'" + v;            // neutralise spreadsheet formula injection
+      return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+    }
+    function exportCSV() {
+      var rows = [['category', 'item', 'record', 'date', 'kind', 'amount_rwf', 'method', 'pending', 'note']];
+      state.categories.forEach(function (cat) {
+        cat.items.forEach(function (it) {
+          rows.push([cat.name, it.label, 'monthly plan', state.month, '', it.amount, '', '', '']);
+          (it.history || []).forEach(function (h) { rows.push([cat.name, it.label, 'entry', h.date, h.kind, h.amount, h.method, h.pending ? 'yes' : '', h.note]); });
+        });
+      });
+      saveFile('budget-ledger-' + (state.month || 'export') + '.csv', rows.map(function (r) { return r.map(csvCell).join(','); }).join('\n'), 'text/csv');
+    }
+    async function importJSON(file) {
+      var j;
+      try { j = JSON.parse(await file.text()); } catch (e) { return alert('That file is not valid JSON.'); }
+      var st = j && j.app === 'budget-ledger' && j.state ? j.state : (j && Array.isArray(j.categories) ? j : null);
+      if (!st) return alert('That file is not a Budget Ledger backup.');
+      var bad = j.checksum && j.checksum !== hash(JSON.stringify(st));
+      var next;
+      try { next = ensureMeta(normalizeState(st)); } catch (e) { return alert('Could not read that backup.'); }
+      if (!confirm('Replace your current ledger with this backup? Your current data is kept as a restore point.' + (bad ? '\n\nWarning: checksum mismatch — the file was edited or damaged.' : ''))) return;
+      await snapshot('before import', true);
+      next.meta.rev = state.meta.rev + 1;
+      applyState(next);
+      dirty = true; lastBody = ''; flush();
+    }
+
+    /* ---- data & backups modal ---- */
+    function initDataModal() {
+      var ov = document.getElementById('dataModalOverlay');
+      function close() { ov.classList.remove('is-open'); ov.setAttribute('aria-hidden', 'true'); }
+      async function open() {
+        var mode = (idb ? 'IndexedDB' : 'browser storage') + (cloud ? ' + your account (live sync)' : '');
+        document.getElementById('dataStatus').textContent = 'Stored in: ' + mode + ' · revision ' + state.meta.rev + '. Every change is written locally first, so it works offline.';
+        var snaps = await listSnapshots(), list = document.getElementById('dataSnapList');
+        list.innerHTML = snaps.length ? snaps.map(function (s) {
+          return '<div class="modal-entry"><div class="modal-entry-main"><span class="modal-entry-kind">' + escapeHtml(new Date(s.at).toLocaleString()) + '</span></div>' +
+            '<div class="modal-entry-meta">' + escapeHtml(s.reason) + ' · income RWF ' + formatNum(s.data.netIncome) + '</div>' +
+            '<button type="button" class="modal-pay-edit" data-restore="' + s.at + '">Restore</button></div>';
+        }).join('') : '<div class="modal-empty">No restore points yet — one is created automatically as you work.</div>';
+        list.querySelectorAll('[data-restore]').forEach(function (b) {
+          b.addEventListener('click', async function () {
+            var s = snaps.find(function (x) { return String(x.at) === b.dataset.restore; });
+            if (!s || !confirm('Restore this snapshot? Your current data is kept as a restore point first.')) return;
+            await snapshot('before restore', true);
+            var next = ensureMeta(normalizeState(clone(s.data)));
+            next.meta.rev = state.meta.rev + 1;
+            applyState(next); dirty = true; lastBody = ''; flush(); close();
+          });
+        });
+        ov.classList.add('is-open'); ov.setAttribute('aria-hidden', 'false');
+      }
+      document.getElementById('dataBtn').addEventListener('click', open);
+      document.getElementById('dataModalClose').addEventListener('click', close);
+      ov.addEventListener('click', function (e) { if (e.target === ov) close(); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+      document.getElementById('dataExportJson').addEventListener('click', exportJSON);
+      document.getElementById('dataExportCsv').addEventListener('click', exportCSV);
+      var fi = document.getElementById('dataImportFile');
+      document.getElementById('dataImport').addEventListener('click', function () { fi.click(); });
+      fi.addEventListener('change', function () { if (fi.files[0]) importJSON(fi.files[0]); fi.value = ''; close(); });
+    }
+
+    function recordHistory(monthKey, wealthTotal, allocatedTotal) {
+      if (!monthKey) return;
+      if (!Array.isArray(state.history)) state.history = [];
+      var entry = state.history.find(function (h) { return h.month === monthKey; });
+      if (entry) {
+        entry.wealth = wealthTotal;
+        entry.allocated = allocatedTotal;
+      } else {
+        state.history.push({ month: monthKey, wealth: wealthTotal, allocated: allocatedTotal });
+      }
+      state.history.sort(function (a, b) { return a.month < b.month ? -1 : (a.month > b.month ? 1 : 0); });
+      if (state.history.length > 12) state.history = state.history.slice(state.history.length - 12);
+    }
+
+    function renderWealthSparkline() {
+      var svgEl = document.getElementById('wealthSpark');
+      if (!svgEl) return;
+      var points = (state.history || []).map(function (h) { return Number(h.wealth) || 0; });
+      if (points.length < 2) { svgEl.style.display = 'none'; svgEl.innerHTML = ''; return; }
+      var w = 100, h = 24, pad = 3;
+      var max = Math.max.apply(null, points);
+      var min = Math.min.apply(null, points);
+      var range = max - min || 1;
+      var step = (w - pad * 2) / (points.length - 1);
+      var coords = points.map(function (v, i) {
+        return [pad + i * step, pad + (h - pad * 2) * (1 - (v - min) / range)];
+      });
+      var d = 'M' + coords.map(function (c) { return c[0].toFixed(1) + ',' + c[1].toFixed(1); }).join(' L');
+      var last = coords[coords.length - 1];
+      svgEl.innerHTML = '<path d="' + d + '"></path><circle cx="' + last[0].toFixed(1) + '" cy="' + last[1].toFixed(1) + '" r="1.8"></circle>';
+      svgEl.style.display = 'block';
+    }
+
+    /* ---------- wealth history: contributions vs growth vs withdrawals ---------- */
+
+    function historyTotals(item) {
+      var contributed = 0, growth = 0, withdrawals = 0, pending = 0;
+      (item.history || []).forEach(function (h) {
+        var amt = Math.abs(Number(h.amount) || 0);
+        if (h.pending) { pending += amt; return; } // not confirmed yet — doesn't count toward the total
+        if (h.kind === 'growth') growth += amt;
+        else if (h.kind === 'withdrawal') withdrawals += amt;
+        else contributed += amt;
+      });
+      return { contributed: contributed, growth: growth, withdrawals: withdrawals, pending: pending, current: contributed + growth - withdrawals };
+    }
+
+    function syncItemFromHistory(item) {
+      if (!item.history || !item.history.length) return;
+      var t = historyTotals(item);
+      item.contributed = t.contributed;
+      item.current = t.current;
+    }
+
+    function itemGrowthDisplay(item) {
+      if (item.history && item.history.length) return historyTotals(item).growth;
+      return Math.max((Number(item.current) || 0) - (Number(item.contributed) || 0), 0);
+    }
+
+    // A goal only needs contributions up to its target; once reached (or about to be
+    // crossed by the next monthly contribution) the remainder of that monthly amount
+    // is "released" for the person to redirect elsewhere — the app surfaces this,
+    // it never moves the money itself.
+    function goalStatus(item) {
+      var target = Number(item.target) || 0;
+      if (target <= 0) return { status: 'none', remaining: 0, releasable: 0 };
+      var current = Number(item.current) || 0;
+      var monthly = Number(item.amount) || 0;
+      var remaining = Math.max(target - current, 0);
+      if (current >= target) return { status: 'reached', remaining: 0, releasable: monthly };
+      if (monthly > 0 && remaining < monthly) return { status: 'near', remaining: remaining, releasable: monthly - remaining };
+      if (current / target >= 0.9) return { status: 'near', remaining: remaining, releasable: 0 };
+      return { status: 'active', remaining: remaining, releasable: 0 };
+    }
+
+    function releaseAllocation(cat, item) {
+      var g = goalStatus(item);
+      if (g.releasable <= 0) return { amount: 0, lines: [] };
+      var redirects = (item.redirects || []).filter(function (r) { return cat.items.some(function (i) { return i.id === r.id; }); });
+      if (!redirects.length) return { amount: g.releasable, lines: [] };
+      var totalPct = redirects.reduce(function (s, r) { return s + (Number(r.pct) || 0); }, 0) || 100;
+      var lines = redirects.map(function (r) {
+        var target = cat.items.find(function (i) { return i.id === r.id; });
+        var pct = Number(r.pct) || 0;
+        return { label: target ? target.label : 'Unknown', pct: pct, amount: Math.round(g.releasable * (pct / totalPct)) };
+      });
+      return { amount: g.releasable, lines: lines };
+    }
+
+    function goalStatusBadge(cat, item) {
+      var g = goalStatus(item);
+      if (g.status === 'none' || g.status === 'active') return '';
+      var cls = g.status === 'reached' ? 'is-reached' : 'is-near';
+      var label = g.status === 'reached' ? 'Target reached' : 'Near target';
+      var hint = '';
+      if (g.releasable > 0) {
+        var alloc = releaseAllocation(cat, item);
+        if (alloc.lines.length) {
+          hint = 'RWF ' + formatNum(g.releasable) + '/mo → ' + alloc.lines.map(function (l) { return escapeHtml(l.label) + ' ' + formatNum(l.amount); }).join(' · ');
+        } else {
+          hint = 'RWF ' + formatNum(g.releasable) + '/mo free — set a redirect priority ↗';
+        }
+      } else if (g.status === 'near') {
+        hint = 'RWF ' + formatNum(g.remaining) + ' more to reach target';
+      }
+      return '<div class="wi-status-row"><span class="wi-status-pill ' + cls + '">' + label + '</span>' +
+        (hint ? '<span class="wi-status-hint">' + hint + '</span>' : '') + '</div>';
+    }
+
+    function renderWealthReleaseNote(cat) {
+      var card = document.querySelector('.cat-card[data-cat="save"]');
+      if (!card) return;
+      var note = card.querySelector('[data-release-note]');
+      if (!note) return;
+      var lines = [];
+      cat.items.forEach(function (item) {
+        var g = goalStatus(item);
+        if (g.releasable > 0) {
+          var alloc = releaseAllocation(cat, item);
+          var dest = alloc.lines.length
+            ? ('→ ' + alloc.lines.map(function (l) { return escapeHtml(l.label) + ' RWF ' + formatNum(l.amount); }).join(', '))
+            : '(no priority set)';
+          lines.push(escapeHtml(item.label) + ' — RWF ' + formatNum(g.releasable) + '/mo ' + dest);
+        }
+      });
+      if (lines.length) {
+        note.innerHTML = '<strong>Capital released, ready to redirect:</strong> ' + lines.join(' · ');
+        note.style.display = 'block';
+      } else {
+        note.innerHTML = '';
+        note.style.display = 'none';
+      }
+    }
+
+    function wealthAggregate(cat) {
+      var monthly = 0, contributed = 0, current = 0, growth = 0;
+      cat.items.forEach(function (it) {
+        monthly += Number(it.amount) || 0;
+        contributed += Number(it.contributed) || 0;
+        current += Number(it.current) || 0;
+        growth += itemGrowthDisplay(it);
+      });
+      var gain = current - contributed;
+      var roi = contributed > 0 ? (gain / contributed) * 100 : null;
+      return { monthly: monthly, annual: monthly * 12, contributed: contributed, current: current, gain: gain, roi: roi, growth: growth };
+    }
+
+    function updateTotals() {
+      var income = Number(state.netIncome) || 0;
+      var running = 0;
+
+      var incomeEl = document.getElementById('overviewIncome');
+      if (incomeEl) incomeEl.textContent = 'RWF ' + formatNum(income);
+      var monthEl = document.getElementById('overviewMonth');
+      if (monthEl) monthEl.textContent = state.month || '';
+
+      state.categories.forEach(function (cat) {
+        var total = categoryTotal(cat);
+        running += total;
+        var card = document.querySelector('.cat-card[data-cat="' + cat.id + '"]');
+        if (!card) return;
+        var pct = income > 0 ? (total / income) : 0;
+        var subtotalEl = card.querySelector('[data-subtotal]');
+        var pctEl = card.querySelector('[data-pct]');
+        var barEl = card.querySelector('[data-bar]');
+        if (subtotalEl) subtotalEl.textContent = 'RWF ' + formatNum(total);
+        if (pctEl) pctEl.textContent = Math.round(pct * 100) + '% of income';
+        if (barEl) { barEl.style.transform = 'scaleX(' + Math.min(Math.max(pct, 0), 1) + ')'; barEl.style.background = 'var(--' + cat.accent + ')'; }
+
+        if (cat.id === 'save') {
+          var agg = wealthAggregate(cat);
+          setParentKpi(card, 'monthly', 'RWF ' + formatNum(agg.monthly));
+          setParentKpi(card, 'annual', 'RWF ' + formatNum(agg.annual));
+          setParentKpi(card, 'contributed', 'RWF ' + formatNum(agg.contributed));
+          setParentKpi(card, 'current', 'RWF ' + formatNum(agg.current));
+          setParentKpi(card, 'gain', (agg.gain >= 0 ? '+' : '-') + 'RWF ' + formatNum(Math.abs(agg.gain)), agg.contributed > 0 ? (agg.gain >= 0 ? 'is-positive' : 'is-negative') : '');
+          setParentKpi(card, 'growth', '+RWF ' + formatNum(agg.growth), agg.growth > 0 ? 'is-positive' : '');
+          setParentKpi(card, 'roi', agg.roi === null ? '—' : (agg.roi >= 0 ? '+' : '') + agg.roi.toFixed(2) + '%', agg.roi === null ? '' : (agg.roi >= 0 ? 'is-positive' : 'is-negative'));
+          renderWealthReleaseNote(cat);
+        }
+      });
+
+      var allocatedValue = document.getElementById('allocatedValue');
+      var allocatedPct = document.getElementById('allocatedPct');
+      var allocPct = income > 0 ? running / income : 0;
+      if (allocatedValue) allocatedValue.textContent = 'RWF ' + formatNum(running);
+      if (allocatedPct) {
+        var remainingAmt = income - running;
+        if (income <= 0) {
+          allocatedPct.textContent = 'set income to see room left';
+        } else if (remainingAmt >= 0) {
+          allocatedPct.textContent = 'RWF ' + formatNum(remainingAmt) + ' left';
+        } else {
+          allocatedPct.textContent = 'RWF ' + formatNum(Math.abs(remainingAmt)) + ' over';
+        }
+      }
+      var tileAllocated = document.getElementById('tileAllocated');
+      var isOverBudget = income > 0 && running > income;
+      if (tileAllocated) {
+        tileAllocated.classList.toggle('is-negative', isOverBudget);
+        if (isOverBudget && !wasOverBudget) {
+          tileAllocated.classList.remove('pulse-alert');
+          void tileAllocated.offsetWidth;
+          tileAllocated.classList.add('pulse-alert');
+        }
+      }
+      wasOverBudget = isOverBudget;
+
+      var ringFill = document.getElementById('ringFill');
+      var ringPct = document.getElementById('ringPct');
+      var ringCaption = document.getElementById('ringCaption');
+      if (ringFill && ringPct) {
+        var circumference = 326.73;
+        var clamped = Math.min(Math.max(allocPct, 0), 1);
+        var overBudget = allocPct > 1;
+        var nearFull = !overBudget && allocPct > 0.92;
+        ringFill.style.strokeDashoffset = (circumference * (1 - clamped)).toFixed(2);
+        ringFill.style.stroke = overBudget ? 'var(--danger)' : 'var(--emerald)';
+        ringPct.textContent = Math.round(allocPct * 100) + '%';
+        if (ringCaption) ringCaption.textContent = overBudget ? 'over budget' : (nearFull ? 'nearly full' : 'allocated');
+      }
+
+      var saveCat = state.categories.find(function (c) { return c.id === 'save'; });
+      var wealthValue = document.getElementById('wealthValue');
+      var wealthPct = document.getElementById('wealthPct');
+      var wealthTotal = saveCat ? categoryTotal(saveCat) : 0;
+      if (wealthValue) wealthValue.textContent = 'RWF ' + formatNum(wealthTotal);
+      if (wealthPct) wealthPct.textContent = (income > 0 ? Math.round(wealthTotal / income * 100) : 0) + '% of income';
+
+      recordHistory(state.month, wealthTotal, running);
+      renderWealthSparkline();
+
+      var balance = income - running;
+      var balanceValue = document.getElementById('balanceValue');
+      var balanceSub = document.getElementById('balanceSub');
+      var tileBalance = document.getElementById('tileBalance');
+      if (balanceValue) balanceValue.textContent = (balance < 0 ? '-RWF ' : 'RWF ') + formatNum(Math.abs(balance));
+      if (balanceSub) balanceSub.textContent = balance < 0 ? 'over the plan' : (balance > 0 ? 'yours — no assignment' : 'fully assigned');
+      if (tileBalance) { tileBalance.classList.toggle('is-negative', balance < 0); tileBalance.classList.toggle('is-positive', balance > 0); }
+
+      var portfolioValue = document.getElementById('portfolioValue');
+      var portfolioSub = document.getElementById('portfolioSub');
+      if (saveCat && portfolioValue) {
+        var agg2 = wealthAggregate(saveCat);
+        portfolioValue.textContent = 'RWF ' + formatNum(agg2.current);
+        if (portfolioSub) portfolioSub.textContent = agg2.roi === null ? 'tracked wealth items' : ((agg2.roi >= 0 ? '+' : '') + agg2.roi.toFixed(1) + '% overall return');
+      }
+
+      var compBar = document.getElementById('compositionBar');
+      var compLegend = document.getElementById('compositionLegend');
+      if (compBar) {
+        compBar.innerHTML = '';
+        state.categories.forEach(function (cat) {
+          var total = categoryTotal(cat);
+          var pct = income > 0 ? (total / income * 100) : 0;
+          var seg = document.createElement('div');
+          seg.className = 'comp-seg accent-' + cat.accent + '-bg';
+          seg.style.width = Math.max(pct, 0) + '%';
+          compBar.appendChild(seg);
+        });
+      }
+      if (compLegend) {
+        compLegend.innerHTML = state.categories.map(function (cat) {
+          var total = categoryTotal(cat);
+          var pct = income > 0 ? Math.round(total / income * 100) : 0;
+          return '<span class="legend-item"><i class="legend-dot accent-' + cat.accent + '-bg"></i>' + escapeHtml(cat.name) + ' · ' + pct + '%</span>';
+        }).join('');
+      }
+    }
+
+    function setParentKpi(card, key, text, extraClass) {
+      var el = card.querySelector('[data-parent-kpi="' + key + '"]');
+      if (!el) return;
+      el.textContent = text;
+      el.classList.remove('is-positive', 'is-negative');
+      if (extraClass) el.classList.add(extraClass);
+    }
+
+    /* ---------- simple item rows (give / essential / lifestyle) ---------- */
+
+    function createItemRow(cat, item) {
+      var li = document.createElement('li');
+      li.className = 'item-row';
+      li.dataset.itemId = item.id;
+      renderItemRowInner(li, cat, item);
+      return li;
+    }
+
+    function renderItemRowInner(li, cat, item) {
+      var hasHistory = !!(item.history && item.history.length);
+      var logged = hasHistory ? historyTotals(item).current : 0;
+      var pct = item.amount > 0 ? Math.min(logged / item.amount * 100, 100) : 0;
+      li.innerHTML =
+        '<div class="item-row-main">' +
+          '<input type="text" class="item-label" value="' + escapeHtml(item.label) + '" aria-label="Line item name">' +
+          '<input type="text" inputmode="numeric" class="item-amount" value="' + formatNum(item.amount) + '" aria-label="Amount in RWF">' +
+          '<button type="button" class="wi-history-btn" data-history aria-label="View history for ' + escapeHtml(item.label) + '">' + iconSVG('clock') + '</button>' +
+          '<button type="button" class="item-delete" aria-label="Remove ' + escapeHtml(item.label) + '">&times;</button>' +
+        '</div>' +
+        (hasHistory ? '<div class="item-progress-row"><div class="item-progress-track"><div class="item-progress-fill" style="width:' + pct + '%"></div></div><span class="item-progress-label">RWF ' + formatNum(logged) + ' logged of RWF ' + formatNum(item.amount) + '</span></div>' : '');
+
+      var labelInput = li.querySelector('.item-label');
+      var amountInput = li.querySelector('.item-amount');
+      var delBtn = li.querySelector('.item-delete');
+      var historyBtn = li.querySelector('[data-history]');
+
+      labelInput.addEventListener('input', function () { item.label = labelInput.value; scheduleSave(); });
+      amountInput.addEventListener('input', function () { item.amount = formatAndReposition(amountInput); updateTotals(); scheduleSave(); });
+      amountInput.addEventListener('change', function () { renderItemRowInner(li, cat, item); });
+      historyBtn.addEventListener('click', function () { openHistoryModal(cat, item); });
+      delBtn.addEventListener('click', function () {
+        var idx = cat.items.findIndex(function (i) { return i.id === item.id; });
+        if (idx > -1) cat.items.splice(idx, 1);
+        li.classList.add('is-leaving');
+        setTimeout(function () { li.remove(); renderEmptyState(cat); updateTotals(); scheduleSave(); }, 160);
+      });
+    }
+
+    function renderEmptyState(cat) {
+      var card = document.querySelector('.cat-card[data-cat="' + cat.id + '"]');
+      if (!card) return;
+      var list = card.querySelector('[data-items]');
+      if (!list) return;
+      var existingEmpty = list.querySelector('.item-empty');
+      if (cat.items.length === 0 && !existingEmpty) {
+        var li = document.createElement('li');
+        li.className = 'item-empty';
+        li.textContent = 'No line items yet — add one below.';
+        list.appendChild(li);
+      } else if (cat.items.length > 0 && existingEmpty) {
+        existingEmpty.remove();
+      }
+    }
+
+    /* ---------- wealth item cards ---------- */
+
+    function wealthMetricRow(item) {
+      var type = WEALTH_TYPES[item.type] || WEALTH_TYPES.custom;
+      var behavior = ensureBehavior(item);
+      var hasHistory = !!(item.history && item.history.length);
+      var gain = (Number(item.current) || 0) - (Number(item.contributed) || 0);
+      var roi = item.contributed > 0 ? (gain / item.contributed) * 100 : null;
+      var progress = item.target > 0 ? Math.min((Number(item.current) || 0) / item.target * 100, 100) : 0;
+
+      var cells = '';
+      if (type.showROI) {
+        cells += hasHistory ? metricReadout('Total contributed', 'RWF ' + formatNum(item.contributed)) : metricInput('contributed', 'Total contributed', item.contributed);
+        cells += hasHistory ? metricReadout('Current value', 'RWF ' + formatNum(item.current), '', true) : metricInput('current', 'Current value', item.current, false, true);
+      } else {
+        cells += hasHistory ? metricReadout('Current balance', 'RWF ' + formatNum(item.current), '', true) : metricInput('current', 'Current balance', item.current, false, true);
+      }
+      cells += metricInput('target', 'Target', item.target);
+      if (type.showROI) {
+        cells += metricInput('expectedReturn', 'Expected return %', item.expectedReturn, true);
+        cells += metricReadout('Gain / loss', (gain >= 0 ? '+' : '-') + 'RWF ' + formatNum(Math.abs(gain)), item.contributed > 0 ? (gain >= 0 ? 'is-positive' : 'is-negative') : 'is-muted');
+        cells += metricReadout('ROI', roi === null ? '—' : (roi >= 0 ? '+' : '') + roi.toFixed(2) + '%', roi === null ? 'is-muted' : (roi >= 0 ? 'is-positive' : 'is-negative'), true);
+        var expectedPct = Number(item.expectedReturn) || 0;
+        var vsExpectedText = '—', vsExpectedCls = 'is-muted';
+        if (roi !== null && expectedPct) {
+          var delta = roi - expectedPct;
+          vsExpectedText = (delta >= 0 ? '+' : '') + delta.toFixed(2) + ' pts';
+          vsExpectedCls = delta >= 0 ? 'is-positive' : 'is-negative';
+        }
+        cells += metricReadout('vs. expected', vsExpectedText, vsExpectedCls);
+        cells += metricReadout('Target progress', item.target > 0 ? progress.toFixed(1) + '%' : '—', item.target > 0 ? '' : 'is-muted');
+        if (hasHistory) {
+          var ht = historyTotals(item);
+          cells += metricReadout(cap(behavior.growthLabel), '+RWF ' + formatNum(ht.growth), 'is-positive');
+          if (ht.withdrawals > 0) cells += metricReadout('Withdrawals', '-RWF ' + formatNum(ht.withdrawals), 'is-negative');
+        }
+      } else {
+        var remaining = Math.max((item.target || 0) - (item.current || 0), 0);
+        cells += metricReadout('Remaining to target', item.target > 0 ? 'RWF ' + formatNum(remaining) : '—', item.target > 0 ? '' : 'is-muted');
+        cells += metricReadout('Target progress', item.target > 0 ? progress.toFixed(1) + '%' : '—', item.target > 0 ? '' : 'is-muted', true);
+        if (hasHistory) {
+          var ht2 = historyTotals(item);
+          cells += metricReadout(cap(behavior.growthLabel), '+RWF ' + formatNum(ht2.growth), 'is-positive');
+          if (ht2.withdrawals > 0) cells += metricReadout('Withdrawals', '-RWF ' + formatNum(ht2.withdrawals), 'is-negative');
+        }
+      }
+      return { cells: cells, progress: progress };
+    }
+
+    function metricInput(field, label, value, isPercent, featured) {
+      return '<div class="wi-metric' + (featured ? ' is-featured' : '') + '"><span class="wi-metric-label">' + escapeHtml(label) + '</span>' +
+        '<input type="text" inputmode="' + (isPercent ? 'decimal' : 'numeric') + '" class="wi-metric-input" data-field="' + field + '" value="' + (isPercent ? (Number(value) || 0) : formatNum(value)) + '" aria-label="' + escapeHtml(label) + '"></div>';
+    }
+
+    function metricReadout(label, text, cls, featured) {
+      return '<div class="wi-metric' + (featured ? ' is-featured' : '') + '"><span class="wi-metric-label">' + escapeHtml(label) + '</span>' +
+        '<span class="wi-metric-readout ' + (cls || '') + '">' + text + '</span></div>';
+    }
+
+    function wealthTypeOptions(selected) {
+      return Object.keys(WEALTH_TYPES).map(function (key) {
+        return '<option value="' + key + '"' + (key === selected ? ' selected' : '') + '>' + WEALTH_TYPES[key].label + '</option>';
+      }).join('');
+    }
+
+    function createWealthCard(cat, item) {
+      var div = document.createElement('div');
+      div.className = 'wealth-item';
+      div.dataset.itemId = item.id;
+      renderWealthCardInner(div, cat, item);
+      return div;
+    }
+
+    function renderWealthCardInner(div, cat, item) {
+      var type = WEALTH_TYPES[item.type] || WEALTH_TYPES.custom;
+      var behavior = ensureBehavior(item);
+      var m = wealthMetricRow(item);
+      div.innerHTML =
+        '<div class="wi-head">' +
+          '<span class="wi-icon-badge">' + iconSVG(type.icon) + '</span>' +
+          '<div class="wi-title-block">' +
+            '<div class="wi-title-row">' +
+              '<input type="text" class="item-label" value="' + escapeHtml(item.label) + '" aria-label="Investment name">' +
+              '<select class="wi-type-select" aria-label="Type">' + wealthTypeOptions(item.type) + '</select>' +
+            '</div>' +
+            '<div class="wi-amount-row"><span class="rwf-prefix">RWF</span><input type="text" inputmode="numeric" class="item-amount" value="' + formatNum(item.amount) + '" aria-label="Monthly amount"><span class="wi-amount-suffix">/ month</span></div>' +
+            '<div class="wi-behavior-row"><select class="wi-behavior-select" aria-label="How this asset behaves">' + behaviorOptions(item.behavior) + '</select><span class="wi-behavior-hint">' + escapeHtml(behavior.hint) + '</span></div>' +
+          '</div>' +
+          '<button type="button" class="wi-redirect-btn" data-redirect aria-label="Set redirect priority for ' + escapeHtml(item.label) + '">' + iconSVG('target') + '</button>' +
+          '<button type="button" class="wi-history-btn" data-history aria-label="View history for ' + escapeHtml(item.label) + '">' + iconSVG('clock') + '</button>' +
+          '<button type="button" class="item-delete" aria-label="Remove ' + escapeHtml(item.label) + '">&times;</button>' +
+        '</div>' +
+        goalStatusBadge(cat, item) +
+        '<div class="wi-progress-track"><div class="wi-progress-fill" style="width:' + m.progress + '%"></div></div>' +
+        '<div class="wi-metrics">' + m.cells + '</div>';
+
+      var labelInput = div.querySelector('.item-label');
+      var amountInput = div.querySelector('.item-amount');
+      var typeSelect = div.querySelector('.wi-type-select');
+      var behaviorSelect = div.querySelector('.wi-behavior-select');
+      var delBtn = div.querySelector('.item-delete');
+      var historyBtn = div.querySelector('[data-history]');
+      var redirectBtn = div.querySelector('[data-redirect]');
+
+      labelInput.addEventListener('input', function () { item.label = labelInput.value; scheduleSave(); });
+      amountInput.addEventListener('input', function () { item.amount = formatAndReposition(amountInput); updateTotals(); scheduleSave(); });
+      typeSelect.addEventListener('change', function () { item.type = typeSelect.value; renderWealthCardInner(div, cat, item); updateTotals(); scheduleSave(); });
+      behaviorSelect.addEventListener('change', function () { item.behavior = behaviorSelect.value; renderWealthCardInner(div, cat, item); updateTotals(); scheduleSave(); });
+      historyBtn.addEventListener('click', function () { openHistoryModal(cat, item); });
+      redirectBtn.addEventListener('click', function () { openRedirectModal(cat, item); });
+      delBtn.addEventListener('click', function () {
+        var idx = cat.items.findIndex(function (i) { return i.id === item.id; });
+        if (idx > -1) cat.items.splice(idx, 1);
+        div.classList.add('is-leaving');
+        setTimeout(function () { div.remove(); renderWealthEmptyState(cat); updateTotals(); scheduleSave(); }, 160);
+      });
+
+      div.querySelectorAll('.wi-metric-input').forEach(function (inp) {
+        var field = inp.dataset.field;
+        inp.addEventListener('input', function () {
+          if (field === 'expectedReturn') {
+            var v = inp.value.replace(/[^\d.]/g, '');
+            item.expectedReturn = Number(v) || 0;
+          } else {
+            item[field] = formatAndReposition(inp);
+          }
+        });
+        inp.addEventListener('change', function () { renderWealthCardInner(div, cat, item); updateTotals(); scheduleSave(); });
+      });
+    }
+
+    function renderWealthEmptyState(cat) {
+      var card = document.querySelector('.cat-card[data-cat="save"]');
+      if (!card) return;
+      var list = card.querySelector('[data-wealth-list]');
+      var existingEmpty = list.querySelector('.item-empty');
+      if (cat.items.length === 0 && !existingEmpty) {
+        var li = document.createElement('div');
+        li.className = 'item-empty';
+        li.textContent = 'No wealth items yet — add one below.';
+        list.appendChild(li);
+      } else if (cat.items.length > 0 && existingEmpty) {
+        existingEmpty.remove();
+      }
+    }
+
+    /* ---------- history modal ---------- */
+
+    var historyModalCtx = null;
+    var editingEntryId = null;
+
+    function openHistoryModal(cat, item) {
+      historyModalCtx = { cat: cat, item: item, isWealth: cat.id === 'save' };
+      document.getElementById('historyModalTitle').textContent = item.label + ' — History';
+      stopEditEntry();
+      var kindSelect = document.getElementById('hEntryKind');
+      var contributionOption = kindSelect.querySelector('option[value="contribution"]');
+      var growthOption = kindSelect.querySelector('option[value="growth"]');
+      if (historyModalCtx.isWealth) {
+        var behaviorForModal = ensureBehavior(item);
+        if (growthOption) { growthOption.hidden = false; growthOption.textContent = cap(behaviorForModal.growthLabel); }
+        if (contributionOption) contributionOption.textContent = 'Contribution';
+      } else {
+        if (growthOption) growthOption.hidden = true;
+        if (contributionOption) contributionOption.textContent = 'Payment';
+      }
+      kindSelect.value = 'contribution';
+      renderHistoryModal();
+      var overlay = document.getElementById('historyModalOverlay');
+      overlay.classList.add('is-open');
+      overlay.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeHistoryModal() {
+      var overlay = document.getElementById('historyModalOverlay');
+      overlay.classList.remove('is-open');
+      overlay.setAttribute('aria-hidden', 'true');
+      historyModalCtx = null;
+      editingEntryId = null;
+    }
+
+    function refreshWealthItemCard(cat, item) {
+      var wealthDiv = document.querySelector('.wealth-item[data-item-id="' + item.id + '"]');
+      if (wealthDiv) {
+        renderWealthCardInner(wealthDiv, cat, item);
+      } else {
+        var rowLi = document.querySelector('.item-row[data-item-id="' + item.id + '"]');
+        if (rowLi) renderItemRowInner(rowLi, cat, item);
+      }
+      updateTotals();
+      scheduleSave();
+    }
+
+    function refreshOpenItemCard() {
+      if (!historyModalCtx) return;
+      refreshWealthItemCard(historyModalCtx.cat, historyModalCtx.item);
+    }
+
+    function findItemById(id) {
+      for (var ci = 0; ci < state.categories.length; ci++) {
+        var cat = state.categories[ci];
+        for (var ii = 0; ii < cat.items.length; ii++) {
+          if (cat.items[ii].id === id) return { cat: cat, item: cat.items[ii] };
+        }
+      }
+      return null;
+    }
+
+    // Per-item override first (different goals/lines can pay into different
+    // numbers), falling back to the app-wide default for that method.
+    function resolveDialCode(item, method) {
+      if (item.quickDial && item.quickDial[method]) return item.quickDial[method];
+      return (state.quickDial && state.quickDial[method]) || '';
+    }
+
+    // The pay-handoff button only makes sense for methods with a dial code
+    // (MoMo, Airtel). Everything else (cash, bank, BPR) is recorded by hand.
+    // Hidden while editing an existing entry — editing shouldn't trigger a new dial.
+    function updatePayButtonVisibility() {
+      var method = document.getElementById('hEntryMethod').value;
+      var row = document.getElementById('hPayRow');
+      var btn = document.getElementById('hPayHandoffBtn');
+      if (!editingEntryId && state.quickDial && state.quickDial.hasOwnProperty(method)) {
+        btn.textContent = 'Pay with ' + PAYMENT_METHODS[method];
+        row.classList.add('is-visible');
+      } else {
+        row.classList.remove('is-visible');
+      }
+    }
+
+    function startEditEntry(h) {
+      editingEntryId = h.id;
+      document.getElementById('hEntryDate').value = h.date;
+      document.getElementById('hEntryKind').value = h.kind;
+      document.getElementById('hEntryAmount').value = formatNum(h.amount);
+      document.getElementById('hEntryMethod').value = h.method || '';
+      document.getElementById('hEntryPending').checked = !!h.pending;
+      document.getElementById('hEntryNote').value = h.note || '';
+      updatePayButtonVisibility();
+      document.getElementById('hFormSubmitBtn').textContent = 'Save changes';
+      document.getElementById('hFormCancelEdit').classList.add('is-visible');
+      document.getElementById('hEntryAmount').focus();
+    }
+
+    function stopEditEntry() {
+      editingEntryId = null;
+      document.getElementById('hEntryDate').value = new Date().toISOString().slice(0, 10);
+      document.getElementById('hEntryKind').value = 'contribution';
+      document.getElementById('hEntryAmount').value = '';
+      document.getElementById('hEntryMethod').value = '';
+      document.getElementById('hEntryPending').checked = false;
+      document.getElementById('hEntryNote').value = '';
+      updatePayButtonVisibility();
+      document.getElementById('hFormSubmitBtn').textContent = '+ Add entry';
+      document.getElementById('hFormCancelEdit').classList.remove('is-visible');
+    }
+
+    // Set right after a pay-handoff dial, cleared once the person answers
+    // the "did it go through" question on return to the tab.
+    var pendingConfirmRef = null;
+
+    function renderHistoryModal() {
+      if (!historyModalCtx) return;
+      var item = historyModalCtx.item;
+      var isWealth = historyModalCtx.isWealth;
+      var t = historyTotals(item);
+      var behavior = isWealth ? ensureBehavior(item) : null;
+
+      var summary = document.getElementById('historyModalSummary');
+      summary.innerHTML =
+        '<div class="modal-summary-row"><span>' + (isWealth ? 'Total contributed' : 'Total paid') + '</span><strong>RWF ' + formatNum(t.contributed) + '</strong></div>' +
+        (isWealth ? '<div class="modal-summary-row"><span>Total ' + escapeHtml(behavior.growthLabel) + '</span><strong class="is-positive">+RWF ' + formatNum(t.growth) + '</strong></div>' : '') +
+        (t.withdrawals > 0 ? '<div class="modal-summary-row"><span>Withdrawals</span><strong class="is-negative">-RWF ' + formatNum(t.withdrawals) + '</strong></div>' : '') +
+        '<div class="modal-summary-row is-total"><span>' + (isWealth ? 'Current value' : 'Net logged') + '</span><strong>RWF ' + formatNum(t.current) + '</strong></div>' +
+        (t.pending > 0 ? '<div class="modal-summary-row"><span>Awaiting confirmation</span><strong style="color: var(--gold)">RWF ' + formatNum(t.pending) + '</strong></div>' : '');
+
+      var list = document.getElementById('historyModalList');
+      var entries = (item.history || []).slice().sort(function (a, b) { return a.date < b.date ? 1 : (a.date > b.date ? -1 : 0); });
+      if (!entries.length) {
+        list.innerHTML = '<div class="modal-empty">No entries yet — log a ' + (isWealth ? 'contribution, growth, or withdrawal' : 'payment') + ' below.</div>';
+        return;
+      }
+      list.innerHTML = entries.map(function (h) {
+        var kindInfo = HISTORY_KINDS[h.kind] || HISTORY_KINDS.contribution;
+        var sign = kindInfo.sign > 0 ? '+' : '-';
+        var cls = kindInfo.sign > 0 ? 'is-positive' : 'is-negative';
+        var kindLabel = h.kind === 'growth' ? cap(behavior.growthLabel) : (h.kind === 'contribution' && !isWealth ? 'Payment' : kindInfo.label);
+        var metaBits = [escapeHtml(h.date)];
+        if (h.method) metaBits.push(escapeHtml(PAYMENT_METHODS[h.method] || h.method));
+        if (h.note) metaBits.push(escapeHtml(h.note));
+        var pendingBtn = h.pending ? '<button type="button" class="modal-entry-pending-btn" data-toggle-pending title="Not counted yet — tap to mark completed">Pending</button>' : '';
+        return '<div class="modal-entry' + (h.pending ? ' is-pending' : '') + '" data-entry-id="' + h.id + '" title="Tap to edit this entry">' +
+          '<div class="modal-entry-main">' +
+            '<span class="modal-entry-amount ' + cls + '">' + sign + 'RWF ' + formatNum(h.amount) + '</span>' +
+            '<span class="modal-entry-kind">' + escapeHtml(kindLabel) + '</span>' +
+            pendingBtn +
+          '</div>' +
+          '<div class="modal-entry-meta">' + metaBits.join(' · ') + '</div>' +
+          '<button type="button" class="modal-entry-delete" data-del-entry aria-label="Delete entry">&times;</button>' +
+        '</div>';
+      }).join('');
+
+      list.querySelectorAll('.modal-entry').forEach(function (row) {
+        row.addEventListener('click', function (e) {
+          if (e.target.closest('[data-del-entry]') || e.target.closest('[data-toggle-pending]')) return;
+          var h = item.history.find(function (x) { return x.id === row.dataset.entryId; });
+          if (h) startEditEntry(h);
+        });
+      });
+
+      list.querySelectorAll('[data-del-entry]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var id = btn.closest('.modal-entry').dataset.entryId;
+          var idx = item.history.findIndex(function (h) { return h.id === id; });
+          if (idx > -1) item.history.splice(idx, 1);
+          if (editingEntryId === id) stopEditEntry();
+          syncItemFromHistory(item);
+          renderHistoryModal();
+          refreshOpenItemCard();
+        });
+      });
+
+      list.querySelectorAll('[data-toggle-pending]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var id = btn.closest('.modal-entry').dataset.entryId;
+          var h = item.history.find(function (h) { return h.id === id; });
+          if (h) h.pending = false;
+          syncItemFromHistory(item);
+          renderHistoryModal();
+          refreshOpenItemCard();
+        });
+      });
+    }
+
+    function initHistoryModal() {
+      document.getElementById('historyModalClose').addEventListener('click', closeHistoryModal);
+      document.getElementById('historyModalOverlay').addEventListener('click', function (e) {
+        if (e.target === this) closeHistoryModal();
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeHistoryModal();
+      });
+      document.getElementById('hEntryMethod').addEventListener('change', updatePayButtonVisibility);
+
+      document.getElementById('hFormCancelEdit').addEventListener('click', function () {
+        stopEditEntry();
+      });
+
+      document.getElementById('hPayEditCode').addEventListener('click', function () {
+        if (!historyModalCtx) return;
+        var item = historyModalCtx.item;
+        var method = document.getElementById('hEntryMethod').value;
+        if (!state.quickDial || !state.quickDial.hasOwnProperty(method)) return;
+        var current = (item.quickDial && item.quickDial[method]) || '';
+        var globalDefault = state.quickDial[method] || '';
+        var next = window.prompt(
+          'Dial code for ' + PAYMENT_METHODS[method] + ', used only for "' + item.label + '". Use {amount} where the amount should go, e.g. *182*1*1*0788000000*{amount}# — check this matches your own SIM/menu before relying on it. Leave blank to use the default (' + globalDefault + ').',
+          current
+        );
+        if (next === null) return;
+        if (!item.quickDial) item.quickDial = {};
+        item.quickDial[method] = next.trim();
+        scheduleSave();
+      });
+
+      document.getElementById('hPayHandoffBtn').addEventListener('click', function () {
+        if (!historyModalCtx || editingEntryId) return;
+        var item = historyModalCtx.item;
+        var amountInput = document.getElementById('hEntryAmount');
+        var amount = Number(amountInput.value.replace(/[^\d]/g, '')) || 0;
+        if (amount <= 0) { amountInput.focus(); return; }
+        var method = document.getElementById('hEntryMethod').value;
+        var entry = {
+          id: uid(),
+          date: document.getElementById('hEntryDate').value || new Date().toISOString().slice(0, 10),
+          kind: document.getElementById('hEntryKind').value,
+          amount: amount,
+          method: method,
+          pending: true, // not confirmed until they answer the return-to-app prompt
+          note: document.getElementById('hEntryNote').value.trim()
+        };
+        if (!item.history) item.history = [];
+        item.history.push(entry);
+        syncItemFromHistory(item);
+        stopEditEntry();
+        renderHistoryModal();
+        refreshOpenItemCard();
+
+        pendingConfirmRef = { itemId: item.id, entryId: entry.id, amount: amount, method: method };
+        var code = resolveDialCode(item, method);
+        var dialCode = code.indexOf('{amount}') > -1 ? code.replace('{amount}', amount) : code;
+        if (dialCode) window.location.href = 'tel:' + encodeURIComponent(dialCode);
+      });
+
+      // Coming back to the tab after a handoff — ask whether it went through,
+      // rather than assuming a payment happened just because the button was tapped.
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState !== 'visible' || !pendingConfirmRef) return;
+        var ref = pendingConfirmRef;
+        pendingConfirmRef = null;
+        var found = findItemById(ref.itemId);
+        if (!found) return;
+        var entry = (found.item.history || []).find(function (h) { return h.id === ref.entryId; });
+        if (!entry || !entry.pending) return;
+        var ok = window.confirm('Did the RWF ' + formatNum(ref.amount) + ' ' + (PAYMENT_METHODS[ref.method] || ref.method) + ' payment go through?');
+        if (ok) {
+          entry.pending = false;
+          syncItemFromHistory(found.item);
+          if (historyModalCtx && historyModalCtx.item.id === found.item.id) renderHistoryModal();
+          refreshWealthItemCard(found.cat, found.item);
+        }
+      });
+
+      document.getElementById('historyAddForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (!historyModalCtx) return;
+        var item = historyModalCtx.item;
+        var amountInput = document.getElementById('hEntryAmount');
+        var amount = Number(amountInput.value.replace(/[^\d]/g, '')) || 0;
+        if (amount <= 0) return;
+        var pendingBox = document.getElementById('hEntryPending');
+        var fields = {
+          date: document.getElementById('hEntryDate').value || new Date().toISOString().slice(0, 10),
+          kind: document.getElementById('hEntryKind').value,
+          amount: amount,
+          method: document.getElementById('hEntryMethod').value,
+          pending: pendingBox.checked,
+          note: document.getElementById('hEntryNote').value.trim()
+        };
+        if (!item.history) item.history = [];
+        if (editingEntryId) {
+          var existing = item.history.find(function (h) { return h.id === editingEntryId; });
+          if (existing) {
+            existing.date = fields.date;
+            existing.kind = fields.kind;
+            existing.amount = fields.amount;
+            existing.method = fields.method;
+            existing.pending = fields.pending;
+            existing.note = fields.note;
+          }
+        } else {
+          fields.id = uid();
+          item.history.push(fields);
+        }
+        syncItemFromHistory(item);
+        stopEditEntry();
+        renderHistoryModal();
+        refreshOpenItemCard();
+        amountInput.focus();
+      });
+    }
+
+    /* ---------- redirect priority modal ---------- */
+
+    var redirectModalCtx = null;
+
+    function openRedirectModal(cat, item) {
+      redirectModalCtx = { cat: cat, item: item };
+      document.getElementById('redirectModalTitle').textContent = item.label + ' — Redirect priority';
+      renderRedirectModal();
+      var overlay = document.getElementById('redirectModalOverlay');
+      overlay.classList.add('is-open');
+      overlay.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeRedirectModal() {
+      var overlay = document.getElementById('redirectModalOverlay');
+      overlay.classList.remove('is-open');
+      overlay.setAttribute('aria-hidden', 'true');
+      redirectModalCtx = null;
+    }
+
+    function renderRedirectModal() {
+      if (!redirectModalCtx) return;
+      var cat = redirectModalCtx.cat, item = redirectModalCtx.item;
+      var others = cat.items.filter(function (i) { return i.id !== item.id; });
+
+      var hint = document.getElementById('redirectModalHint');
+      hint.textContent = 'When ' + item.label + ' hits its target, the monthly amount it frees up splits across these destinations by %.';
+
+      if (!Array.isArray(item.redirects)) item.redirects = [];
+      item.redirects = item.redirects.filter(function (r) { return others.some(function (o) { return o.id === r.id; }); });
+
+      var list = document.getElementById('redirectModalList');
+      var totalEl = document.getElementById('redirectModalTotal');
+      var addBtn = document.getElementById('redirectAddRow');
+
+      if (!others.length) {
+        list.innerHTML = '<div class="modal-empty">Add another wealth item first to redirect into.</div>';
+        totalEl.textContent = '';
+        addBtn.style.display = 'none';
+        return;
+      }
+      addBtn.style.display = '';
+
+      if (!item.redirects.length) {
+        list.innerHTML = '<div class="modal-empty">No destinations set — released capital just shows as free.</div>';
+      } else {
+        list.innerHTML = item.redirects.map(function (r, idx) {
+          return '<div class="redirect-row">' +
+            '<select class="redirect-target" data-idx="' + idx + '" aria-label="Destination">' +
+              others.map(function (o) { return '<option value="' + o.id + '"' + (o.id === r.id ? ' selected' : '') + '>' + escapeHtml(o.label) + '</option>'; }).join('') +
+            '</select>' +
+            '<input type="text" inputmode="numeric" class="redirect-pct" data-idx="' + idx + '" value="' + (Number(r.pct) || 0) + '" aria-label="Percent">' +
+            '<span class="redirect-pct-suffix">%</span>' +
+            '<button type="button" class="redirect-remove" data-idx="' + idx + '" aria-label="Remove destination">&times;</button>' +
+          '</div>';
+        }).join('');
+
+        list.querySelectorAll('.redirect-target').forEach(function (sel) {
+          sel.addEventListener('change', function () {
+            item.redirects[Number(sel.dataset.idx)].id = sel.value;
+            refreshWealthItemCard(cat, item);
+          });
+        });
+        list.querySelectorAll('.redirect-pct').forEach(function (inp) {
+          inp.addEventListener('input', function () {
+            item.redirects[Number(inp.dataset.idx)].pct = Number(inp.value.replace(/[^\d.]/g, '')) || 0;
+            renderRedirectTotal(item);
+            refreshWealthItemCard(cat, item);
+          });
+        });
+        list.querySelectorAll('.redirect-remove').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            item.redirects.splice(Number(btn.dataset.idx), 1);
+            renderRedirectModal();
+            refreshWealthItemCard(cat, item);
+          });
+        });
+      }
+      renderRedirectTotal(item);
+    }
+
+    function renderRedirectTotal(item) {
+      var totalEl = document.getElementById('redirectModalTotal');
+      if (!item.redirects.length) { totalEl.textContent = ''; return; }
+      var total = item.redirects.reduce(function (s, r) { return s + (Number(r.pct) || 0); }, 0);
+      totalEl.textContent = total + '% assigned';
+      totalEl.className = 'redirect-total ' + (total === 100 ? 'is-ok' : 'is-off');
+    }
+
+    function initRedirectModal() {
+      document.getElementById('redirectModalClose').addEventListener('click', closeRedirectModal);
+      document.getElementById('redirectModalOverlay').addEventListener('click', function (e) {
+        if (e.target === this) closeRedirectModal();
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeRedirectModal();
+      });
+      document.getElementById('redirectAddRow').addEventListener('click', function () {
+        if (!redirectModalCtx) return;
+        var cat = redirectModalCtx.cat, item = redirectModalCtx.item;
+        var others = cat.items.filter(function (i) { return i.id !== item.id; });
+        if (!others.length) return;
+        var used = item.redirects.map(function (r) { return r.id; });
+        var next = others.find(function (o) { return used.indexOf(o.id) === -1; }) || others[0];
+        item.redirects.push({ id: next.id, pct: 0 });
+        renderRedirectModal();
+        refreshWealthItemCard(cat, item);
+      });
+    }
+
+    /* ---------- category card shell ---------- */
+
+    function catCardTemplate(cat, rank) {
+      var isWealth = cat.id === 'save';
+      var bodyInner = '';
+
+      if (isWealth) {
+        bodyInner =
+          '<div class="parent-kpis">' +
+            parentKpi('monthly', 'Monthly') + parentKpi('annual', 'Annual') +
+            parentKpi('contributed', 'Total contributed') + parentKpi('current', 'Current value', true) +
+            parentKpi('gain', 'Total gain / loss') + parentKpi('growth', 'Total growth') + parentKpi('roi', 'Overall ROI', true) +
+          '</div>' +
+          '<div class="wealth-release-note" data-release-note></div>' +
+          '<div class="wealth-list" data-wealth-list></div>' +
+          '<button type="button" class="add-wealth-btn" data-add-wealth>+ Add wealth item</button>';
+      } else {
+        bodyInner =
+          '<ul class="item-list" data-items></ul>' +
+          '<button type="button" class="add-item-btn" data-add>+ Add line item</button>';
+      }
+
+      return (
+        '<button type="button" class="cat-header" data-toggle>' +
+          '<span class="cat-rail" aria-hidden="true">' + String(rank).padStart(2, '0') + '</span>' +
+          '<span class="cat-icon-badge">' + iconSVG(CAT_ICONS[cat.id]) + '</span>' +
+          '<span class="cat-head-text"><h3>' + escapeHtml(cat.name) + '</h3><p class="cat-caption">' + escapeHtml(cat.caption || '') + '</p></span>' +
+          '<span class="cat-subtotal"><span class="cat-subtotal-value" data-subtotal>RWF 0</span><span class="cat-subtotal-pct" data-pct>0% of income</span></span>' +
+          iconSVG('chevron', 'cat-chevron') +
+        '</button>' +
+        '<div class="cat-progress-track"><div class="cat-progress-fill" data-bar></div></div>' +
+        '<div class="cat-body-wrap"><div class="cat-body-inner"><div class="cat-body">' + bodyInner + '</div></div></div>'
+      );
+    }
+
+    function parentKpi(key, label, featured) {
+      return '<div class="parent-kpi' + (featured ? ' is-featured' : '') + '"><span class="parent-kpi-label">' + label + '</span><span class="parent-kpi-value" data-parent-kpi="' + key + '">—</span></div>';
+    }
+
+    function renderCategory(cat) {
+      var card = document.querySelector('.cat-card[data-cat="' + cat.id + '"]');
+      if (!card) return;
+
+      if (cat.id === 'save') {
+        var list = card.querySelector('[data-wealth-list]');
+        list.innerHTML = '';
+        cat.items.forEach(function (item) { list.appendChild(createWealthCard(cat, item)); });
+        renderWealthEmptyState(cat);
+
+        var addWealthBtn = card.querySelector('[data-add-wealth]');
+        addWealthBtn.onclick = function () {
+          var newItem = { id: uid(), label: 'New wealth item', amount: 0, type: 'investment', behavior: WEALTH_TYPES.investment.defaultBehavior, target: 0, current: 0, contributed: 0, expectedReturn: 0, history: [], redirects: [], quickDial: {} };
+          cat.items.push(newItem);
+          var emptyEl = list.querySelector('.item-empty');
+          if (emptyEl) emptyEl.remove();
+          var el = createWealthCard(cat, newItem);
+          el.classList.add('is-entering');
+          list.appendChild(el);
+          requestAnimationFrame(function () { el.classList.remove('is-entering'); });
+          updateTotals();
+          scheduleSave();
+          var labelInput = el.querySelector('.item-label');
+          labelInput.focus();
+          labelInput.select();
+        };
+      } else {
+        var itemList = card.querySelector('[data-items]');
+        itemList.innerHTML = '';
+        cat.items.forEach(function (item) { itemList.appendChild(createItemRow(cat, item)); });
+        renderEmptyState(cat);
+
+        var addBtn = card.querySelector('[data-add]');
+        addBtn.onclick = function () {
+          var newItem = { id: uid(), label: 'New item', amount: 0, history: [], quickDial: {} };
+          cat.items.push(newItem);
+          var emptyEl = itemList.querySelector('.item-empty');
+          if (emptyEl) emptyEl.remove();
+          var row = createItemRow(cat, newItem);
+          row.classList.add('is-entering');
+          itemList.appendChild(row);
+          requestAnimationFrame(function () { row.classList.remove('is-entering'); });
+          updateTotals();
+          scheduleSave();
+          var labelInput = row.querySelector('.item-label');
+          labelInput.focus();
+          labelInput.select();
+        };
+      }
+    }
+
+    function setOpenCategory(catId) {
+      openCat = catId;
+      document.querySelectorAll('.cat-card').forEach(function (card) {
+        card.classList.toggle('is-open', card.dataset.cat === catId);
+      });
+    }
+
+    function buildCategoryShells() {
+      var wrap = document.getElementById('categories');
+      wrap.innerHTML = '';
+      state.categories.forEach(function (cat, i) {
+        var article = document.createElement('article');
+        article.className = 'cat-card glass accent-' + cat.accent;
+        article.dataset.cat = cat.id;
+        article.style.setProperty('--i', i);
+        article.innerHTML = catCardTemplate(cat, i + 1);
+        wrap.appendChild(article);
+
+        article.querySelector('[data-toggle]').addEventListener('click', function () {
+          setOpenCategory(openCat === cat.id ? null : cat.id);
+        });
+      });
+    }
+
+    function renderAll() {
+      buildCategoryShells();
+      state.categories.forEach(renderCategory);
+      setOpenCategory(openCat);
+      updateTotals();
+    }
+
+    function initFields() {
+      var incomeInput = document.getElementById('netIncome');
+      var monthInput = document.getElementById('budgetMonth');
+      incomeInput.value = formatNum(state.netIncome);
+      monthInput.value = state.month || '2026-09';
+
+      incomeInput.addEventListener('input', function () { state.netIncome = formatAndReposition(incomeInput); updateTotals(); scheduleSave(); });
+      monthInput.addEventListener('input', function () { state.month = monthInput.value; updateTotals(); scheduleSave(); });
+    }
+
+    function initPrinciplesStrip() {
+      var iconSlot = document.getElementById('principlesIconInfo');
+      var chevronSlot = document.getElementById('principlesChevronWrap');
+      if (iconSlot) iconSlot.innerHTML = iconSVG('info');
+      if (chevronSlot) chevronSlot.innerHTML = iconSVG('chevron');
+
+      var strip = document.getElementById('principlesStrip');
+      var toggle = document.getElementById('principlesToggle');
+      if (toggle && strip) {
+        toggle.addEventListener('click', function () {
+          var willOpen = !strip.classList.contains('is-open');
+          strip.classList.toggle('is-open', willOpen);
+          toggle.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        });
+      }
+    }
+
+    async function init() {
+      state = await loadState();
+      initFields();
+      initPrinciplesStrip();
+      initHistoryModal();
+      initRedirectModal();
+      initDataModal();
+      renderAll();
+      startSync();
+
+      document.getElementById('resetBtn').addEventListener('click', async function () {
+        if (!confirm('Reset all values to the original plan? A restore point of your current data is kept.')) return;
+        await snapshot('before reset', true);
+        var oldRev = state.meta ? state.meta.rev : 0;
+        state = defaultState();
+        state.meta = { schema: SCHEMA, rev: oldRev, updatedAt: 0, device: '' };
+        document.getElementById('netIncome').value = formatNum(state.netIncome);
+        document.getElementById('budgetMonth').value = state.month;
+        openCat = 'save';
+        renderAll();
+        scheduleSave();
+      });
+
+      document.querySelectorAll('.cat-card').forEach(function (card, i) {
+        card.style.setProperty('--i', i);
+        card.classList.add('enter-rise');
+      });
+
+      var indicator = document.getElementById('saveIndicator');
+      if (indicator) indicator.textContent = 'Saved';
+    }
+
+    init();
+  })();
+  </script>
+</body>
+</html>
