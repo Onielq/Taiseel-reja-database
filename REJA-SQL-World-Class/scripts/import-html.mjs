@@ -233,7 +233,7 @@ try {
         await client.query(
           `INSERT INTO reja.asset_assessment_factors(asset_id,factor_kind,display_order,factor_label,numeric_value,status_value,import_key,is_current,payload)
            VALUES ($1,'risk',$2,$3,$4,NULL,$5,true,$6::jsonb) ON CONFLICT (import_key) DO UPDATE SET is_current=true`,
-          [assetId, i, String(item[0] ?? 'Unlabelled risk factor'), Number.isFinite(item[1]) ? item[1] : null, key, json(item)]
+          [assetId, i, String(item[0] ?? 'Unlabelled risk factor'), Number.isFinite(item[1]) ? item[1] : null, key, json({ label: String(item[0] ?? 'Unlabelled risk factor'), value: Number.isFinite(item[1]) ? item[1] : null })]
         );
         counts.riskFactors += 1;
       }
@@ -243,7 +243,7 @@ try {
         await client.query(
           `INSERT INTO reja.asset_assessment_factors(asset_id,factor_kind,display_order,factor_label,numeric_value,status_value,import_key,is_current,payload)
            VALUES ($1,'confidence',$2,$3,NULL,$4,$5,true,$6::jsonb) ON CONFLICT (import_key) DO UPDATE SET is_current=true`,
-          [assetId, i, String(item[0] ?? 'Unlabelled confidence factor'), typeof item[1] === 'string' ? item[1] : null, key, json(item)]
+          [assetId, i, String(item[0] ?? 'Unlabelled confidence factor'), typeof item[1] === 'string' ? item[1] : null, key, json({ label: String(item[0] ?? 'Unlabelled confidence factor'), status: typeof item[1] === 'string' ? item[1] : null })]
         );
         counts.confidenceFactors += 1;
       }
