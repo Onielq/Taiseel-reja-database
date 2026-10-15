@@ -1,0 +1,22 @@
+{
+  "name": "reja-sql-world-class",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PostgreSQL-backed Rwanda real-estate intelligence platform and REJA dossier interface",
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "start": "node --env-file=.env src/server.mjs",
+    "migrate": "node --env-file=.env scripts/migrate.mjs",
+    "import:html": "node --env-file=.env scripts/import-html.mjs",
+    "import:file": "node --env-file=.env scripts/import-html.mjs",
+    "test": "node --test",
+    "check": "node scripts/check-frontend.mjs && node --check src/server.mjs && node --check src/db.mjs && node --check src/bootstrap.mjs && node --check src/legacy-data.mjs && node --check scripts/migrate.mjs && node --check scripts/import-html.mjs && node --test"
+  },
+  "dependencies": {
+    "impeccable": "^4.5.2",
+    "pg": "8.16.3"
+  }
+}

@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: reja
+      POSTGRES_USER: reja
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-reja_local_dev_change_this}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - reja_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reja -d reja"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+volumes:
+  reja_pgdata:
