@@ -223,7 +223,7 @@ async function route(req, res, requestId) {
 
     const where = ["t.is_current=true", "t.verification_status='verified'"];
     const params = [];
-    const bind = value => { params.push(value); return `${params.length}`; };
+    const bind = value => { params.push(value); return `$${params.length}`; };
     if (transactionType !== 'all') where.push(`t.transaction_type=${bind(transactionType)}`);
     if (propertyType !== 'all') where.push(`t.property_type=${bind(propertyType)}`);
     if (currency) where.push(`t.currency=${bind(currency)}`);
@@ -257,7 +257,7 @@ async function route(req, res, requestId) {
              coalesce(ev.corroborating_source_count,0)::integer AS corroborating_source_count
         ${fromSql} ${whereSql}
        ORDER BY ${sortColumn} ${sortDir.toUpperCase()} NULLS LAST, t.transaction_date DESC, t.id DESC
-       LIMIT ${dataParams.length - 1} OFFSET ${dataParams.length}`, dataParams);
+       LIMIT $${dataParams.length - 1} OFFSET $${dataParams.length}`, dataParams);
     const total = counts.rows[0].total;
     return sendJson(res, 200, { rows: rows.rows, page, pageSize, total, pages: Math.ceil(total / pageSize), filters: { type: transactionType, propertyType, currency: currency || null, district: district || null, sector: sector || null, from: fromDate || null, to: toDate || null }, requestId });
   }
@@ -282,7 +282,7 @@ async function route(req, res, requestId) {
     if (limit === null) return sendError(res, 400, 'INVALID_LIMIT', 'limit must be from 1 to 600.', requestId);
     const where = ["is_current=true", "verification_status='verified'", "currency=$1"];
     const params = [currency];
-    const bind = value => { params.push(value); return `${params.length}`; };
+    const bind = value => { params.push(value); return `$${params.length}`; };
     if (transactionType !== 'all') where.push(`transaction_type=${bind(transactionType)}`);
     if (propertyType !== 'all') where.push(`property_type=${bind(propertyType)}`);
     if (rentPeriod) where.push(`rent_period=${bind(rentPeriod)}`);
@@ -302,7 +302,7 @@ async function route(req, res, requestId) {
        WHERE ${where.join(' AND ')}
        GROUP BY date_trunc('month', transaction_date)::date, currency, rent_period, transaction_type, property_type
        ORDER BY month_start ASC
-       LIMIT ${params.length}`, params);
+       LIMIT $${params.length}`, params);
     return sendJson(res, 200, { rows: result.rows, count: result.rowCount, filters: { type: transactionType, propertyType, currency, rentPeriod, district: district || null, sector: sector || null, from: fromDate || null, to: toDate || null }, requestId });
   }
 
@@ -321,7 +321,7 @@ async function route(req, res, requestId) {
     if (page === null || pageSize === null) return sendError(res, 400, 'INVALID_PAGINATION', 'page must be positive and pageSize must be from 1 to 100.', requestId);
     const where = ["l.is_current=true", "l.listing_status='active'"];
     const params = [];
-    const bind = value => { params.push(value); return `${params.length}`; };
+    const bind = value => { params.push(value); return `$${params.length}`; };
     if (listingType !== 'all') where.push(`l.listing_type=${bind(listingType)}`);
     if (propertyType !== 'all') where.push(`l.property_type=${bind(propertyType)}`);
     if (currency) where.push(`l.currency=${bind(currency)}`);
@@ -342,7 +342,7 @@ async function route(req, res, requestId) {
              p.building_name,p.unit_label,s.title AS source_title,s.publisher AS source_publisher,s.source_url
         ${fromSql} ${whereSql}
        ORDER BY l.last_seen_at DESC,l.id DESC
-       LIMIT ${dataParams.length - 1} OFFSET ${dataParams.length}`, dataParams);
+       LIMIT $${dataParams.length - 1} OFFSET $${dataParams.length}`, dataParams);
     const total = counts.rows[0].total;
     return sendJson(res, 200, { rows: result.rows, page, pageSize, total, pages: Math.ceil(total / pageSize), requestId });
   }
