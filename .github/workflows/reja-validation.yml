@@ -51,6 +51,11 @@ jobs:
       - name: Apply PostgreSQL migrations
         working-directory: REJA-SQL-World-Class
         run: npm run migrate
+      - name: Smoke-test the source-aware market importer
+        working-directory: REJA-SQL-World-Class
+        run: |
+          printf '%s' '{"source":{"sourceKey":"ci-market-smoke-source","sourceUrl":"https://example.invalid/ci-market-test","title":"CI-only schema smoke test","publisher":"Automated test","purpose":"Temporary rows for an isolated CI database only","sourceType":"user_supplied","payload":{}},"properties":[{"externalId":"CI-PROPERTY-001","propertyType":"apartment","district":"CI Test District","sector":"CI Test Sector","buildingName":"CI Fixture Building","unitLabel":"CI-001","internalAreaSqm":"80.00","payload":{}}],"transactions":[{"sourceRecordKey":"CI-TRANSACTION-001","propertyExternalId":"CI-PROPERTY-001","transactionType":"sale","transactionDate":"2026-01-15","amount":"100000","currency":"RWF","rentPeriod":"not_applicable","propertyType":"apartment","district":"CI Test District","sector":"CI Test Sector","propertyAreaSqm":"80.00","verificationStatus":"unverified","payload":{}}],"listings":[{"sourceRecordKey":"CI-LISTING-001","propertyExternalId":"CI-PROPERTY-001","listingType":"sale","askingAmount":"125000","currency":"RWF","rentPeriod":"not_applicable","propertyType":"apartment","district":"CI Test District","sector":"CI Test Sector","propertyAreaSqm":"80.00","listingUrl":"https://example.invalid/ci-listing/1","listingStatus":"active","payload":{}}]}' > /tmp/market-smoke-snapshot.json
+          npm run market:import -- /tmp/market-smoke-snapshot.json
       - name: Smoke-test market read APIs
         working-directory: REJA-SQL-World-Class
         run: |
@@ -62,5 +67,11 @@ jobs:
             sleep 1
           done
           grep -q '"status":"ok"' /tmp/reja-health.json
-          curl -fsS http://127.0.0.1:8787/api/v1/market/summary
+          curl -fsS http://127.0.0.1:8787/api/v1/market/summary > /tmp/reja-market-summary.json
+          grep -q '"verified_transaction_count":0' /tmp/reja-market-summary.json
+          grep -q '"active_listing_count":1' /tmp/reja-market-summary.json
+          curl -fsS 'http://127.0.0.1:8787/api/v1/market/transactions?type=sale&propertyType=apartment&currency=RWF' > /tmp/reja-market-transactions.json
+          grep -q '"total":0' /tmp/reja-market-transactions.json
+          curl -fsS 'http://127.0.0.1:8787/api/v1/market/listings?type=sale&propertyType=apartment&currency=RWF' > /tmp/reja-market-listings.json
+          grep -q '"total":1' /tmp/reja-market-listings.json
           curl -fsS http://127.0.0.1:8787/market | grep -q 'Know what properties'
