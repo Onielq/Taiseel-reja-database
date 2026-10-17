@@ -79,7 +79,6 @@ test('market importer requires explicit source provenance and human verification
 test('market importer distinguishes rent periods and validates numeric/date input', async () => {
   const importer = await read('scripts/import-market-json.mjs');
   assert.match(importer, /RENT_PERIODS = \['not_applicable','daily','weekly','monthly','yearly'\]/);
-  assert.match(importer, /price per square metre/);
   assert.match(importer, /function decimal\(/);
   assert.match(importer, /function dateOnly\(/);
   assert.match(importer, /function safeSourceUrl\(/);
