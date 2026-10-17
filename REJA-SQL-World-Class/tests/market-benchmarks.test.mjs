@@ -13,7 +13,7 @@ test('official benchmarks have their own database table and cannot be confused w
   assert.match(sql, /REFERENCES reja\.sources\(id\)/);
   assert.match(sql, /district_average_land_price/);
   assert.match(sql, /land_use_transaction_average/);
-  assert.match(sql, /observed_on IS/);
+  assert.match(sql, /observed_on\\s+date NOT NULL/);
   assert.match(sql, /Never treat these rows as individual property transactions/);
   assert.doesNotMatch(sql, /INSERT\s+INTO\s+reja\.market_transactions/i);
 });
