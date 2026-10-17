@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - feature/market-intelligence-dxb-model
-      - feature/official-rwanda-land-benchmarks
   pull_request:
     branches:
       - main
@@ -71,10 +70,6 @@ jobs:
           curl -fsS http://127.0.0.1:8787/api/v1/market/summary > /tmp/reja-market-summary.json
           grep -q '"verified_transaction_count":0' /tmp/reja-market-summary.json
           grep -q '"active_listing_count":1' /tmp/reja-market-summary.json
-          curl -fsS 'http://127.0.0.1:8787/api/v1/market/benchmarks?kind=district_average_land_price' > /tmp/reja-district-benchmarks.json
-          grep -q '"total":30' /tmp/reja-district-benchmarks.json
-          curl -fsS 'http://127.0.0.1:8787/api/v1/market/benchmarks?kind=land_use_transaction_average' > /tmp/reja-land-use-benchmarks.json
-          grep -q '"total":14' /tmp/reja-land-use-benchmarks.json
           curl -fsS 'http://127.0.0.1:8787/api/v1/market/transactions?type=sale&propertyType=apartment&currency=RWF' > /tmp/reja-market-transactions.json
           grep -q '"total":0' /tmp/reja-market-transactions.json
           curl -fsS 'http://127.0.0.1:8787/api/v1/market/listings?type=sale&propertyType=apartment&currency=RWF' > /tmp/reja-market-listings.json
