@@ -15,7 +15,7 @@ function requiredString(v, label, max = 1200) {
 }
 function validDate(v, label) {
   const value = requiredString(v, label, 10);
-  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) fail(`${label} must use YYYY-MM-DD.`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) fail(`${label} must use YYYY-MM-DD.`);
   const date = new Date(`${value}T00:00:00.000Z`);
   if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== value) fail(`${label} must be a real date.`);
   return value;
