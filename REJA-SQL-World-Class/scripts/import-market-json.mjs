@@ -318,8 +318,8 @@ async function linkAdditionalEvidence(client, { transactionId, sourceId, sourceR
      LIMIT 1`, [sourceId, sourceRecordKey]);
   if (existing.rowCount && Number(existing.rows[0].transaction_id) === Number(transactionId)) {
     await client.query(
-      'UPDATE reja.market_transaction_evidence SET last_seen_at=now(),payload=$2::jsonb WHERE id=$1',
-      [existing.rows[0].id, JSON.stringify(payload)]
+      'UPDATE reja.market_transaction_evidence SET last_seen_at=now(),payload=$2::jsonb,evidence_status=$3 WHERE id=$1',
+      [existing.rows[0].id, JSON.stringify(payload), evidenceStatus]
     );
     return;
   }
@@ -355,7 +355,7 @@ async function importSnapshot(client, snapshot, fileHash, fileName) {
         title=coalesce(EXCLUDED.title,reja.sources.title),
         publisher=coalesce(EXCLUDED.publisher,reja.sources.publisher),
         purpose=coalesce(EXCLUDED.purpose,reja.sources.purpose),
-        source_type=EXCLUDED.source_type,is_current=true,
+        source_type=CASE WHEN EXCLUDED.source_type='unclassified' THEN reja.sources.source_type ELSE EXCLUDED.source_type END,is_current=true,
         payload=reja.sources.payload || EXCLUDED.payload,last_seen_at=now()
       RETURNING id`, [source.sourceKey, source.sourceUrl, source.title, source.publisher, source.purpose, source.sourceType, JSON.stringify(source.payload)]);
     const sourceId = sourceResult.rows[0].id;
