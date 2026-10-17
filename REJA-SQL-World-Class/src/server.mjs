@@ -238,7 +238,12 @@ async function route(req, res, requestId) {
     const fromSql = `FROM reja.market_verified_transactions t
       LEFT JOIN reja.market_properties p ON p.id=t.property_id
       LEFT JOIN reja.assets a ON a.id=coalesce(t.asset_id,p.asset_id) AND a.is_current=true
-      JOIN reja.sources s ON s.id=t.source_id`;
+      JOIN reja.sources s ON s.id=t.source_id
+      LEFT JOIN LATERAL (
+        SELECT count(*)::integer AS corroborating_source_count
+          FROM reja.market_transaction_evidence e
+         WHERE e.transaction_id=t.id AND e.is_current=true
+      ) ev ON true`;
     const whereSql = `WHERE ${where.join(' AND ')}`;
     const counts = await pool.query(`SELECT count(*)::integer AS total ${fromSql} ${whereSql}`, params);
     const offset = (page - 1) * pageSize;
@@ -248,7 +253,8 @@ async function route(req, res, requestId) {
              t.price_per_sqm, t.property_area_sqm, t.property_type, t.district_label, t.sector_label,
              t.transaction_channel, t.payment_method, t.verification_status,
              coalesce(a.name,p.project_name,p.building_name) AS project_name,
-             p.building_name, p.unit_label, s.title AS source_title, s.publisher AS source_publisher, s.source_url
+             p.building_name, p.unit_label, s.title AS source_title, s.publisher AS source_publisher, s.source_url,
+             coalesce(ev.corroborating_source_count,0)::integer AS corroborating_source_count
         ${fromSql} ${whereSql}
        ORDER BY ${sortColumn} ${sortDir.toUpperCase()} NULLS LAST, t.transaction_date DESC, t.id DESC
        LIMIT ${dataParams.length - 1} OFFSET ${dataParams.length}`, dataParams);
