@@ -10,6 +10,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, '..');
 const publicDir = path.join(root, 'public');
 const indexPath = path.join(publicDir, 'index.html');
+const marketPath = path.join(publicDir, 'market.html');
 const host = process.env.HOST || '127.0.0.1';
 const port = Number.parseInt(process.env.PORT || '8787', 10);
 if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('PORT must be an integer from 1 to 65535.');
@@ -301,6 +302,47 @@ async function route(req, res, requestId) {
     return sendJson(res, 200, { rows: result.rows, count: result.rowCount, filters: { type: transactionType, propertyType, currency, rentPeriod, district: district || null, sector: sector || null, from: fromDate || null, to: toDate || null }, requestId });
   }
 
+  if (pathname === '/api/v1/market/listings') {
+    const district = (url.searchParams.get('district') || '').trim().slice(0, 100);
+    const sector = (url.searchParams.get('sector') || '').trim().slice(0, 100);
+    const listingType = url.searchParams.get('type') || 'sale';
+    const propertyType = url.searchParams.get('propertyType') || 'all';
+    const currency = (url.searchParams.get('currency') || '').toUpperCase();
+    const page = readInt(url.searchParams.get('page'), 1, 1, 1000000);
+    const pageSize = readInt(url.searchParams.get('pageSize'), 12, 1, 100);
+    const propertyTypes = ['apartment','house','land','commercial','industrial','mixed_use','other','unknown'];
+    if (!['all','sale','rent'].includes(listingType)) return sendError(res, 400, 'INVALID_LISTING_TYPE', 'type must be all, sale, or rent.', requestId);
+    if (propertyType !== 'all' && !propertyTypes.includes(propertyType)) return sendError(res, 400, 'INVALID_PROPERTY_TYPE', 'propertyType is not supported.', requestId);
+    if (currency && !/^[A-Z]{3}$/.test(currency)) return sendError(res, 400, 'INVALID_CURRENCY', 'currency must be a three-letter uppercase code.', requestId);
+    if (page === null || pageSize === null) return sendError(res, 400, 'INVALID_PAGINATION', 'page must be positive and pageSize must be from 1 to 100.', requestId);
+    const where = ["l.is_current=true", "l.listing_status='active'"];
+    const params = [];
+    const bind = value => { params.push(value); return `${params.length}`; };
+    if (listingType !== 'all') where.push(`l.listing_type=${bind(listingType)}`);
+    if (propertyType !== 'all') where.push(`l.property_type=${bind(propertyType)}`);
+    if (currency) where.push(`l.currency=${bind(currency)}`);
+    if (district) where.push(`lower(l.district_label)=lower(${bind(district)})`);
+    if (sector) where.push(`lower(coalesce(l.sector_label,''))=lower(${bind(sector)})`);
+    const fromSql = `FROM reja.market_listings l
+      LEFT JOIN reja.market_properties p ON p.id=l.property_id
+      LEFT JOIN reja.assets a ON a.id=coalesce(l.asset_id,p.asset_id) AND a.is_current=true
+      JOIN reja.sources s ON s.id=l.source_id`;
+    const whereSql = `WHERE ${where.join(' AND ')}`;
+    const counts = await pool.query(`SELECT count(*)::integer AS total ${fromSql} ${whereSql}`, params);
+    const dataParams = [...params, pageSize, (page - 1) * pageSize];
+    const result = await pool.query(`
+      SELECT l.id,l.listing_type,l.asking_amount,l.currency,l.rent_period,l.asking_price_per_sqm,
+             l.property_area_sqm,l.property_type,l.district_label,l.sector_label,l.listing_url,
+             l.first_seen_at,l.last_seen_at,
+             coalesce(a.name,p.project_name,p.building_name) AS project_name,
+             p.building_name,p.unit_label,s.title AS source_title,s.publisher AS source_publisher,s.source_url
+        ${fromSql} ${whereSql}
+       ORDER BY l.last_seen_at DESC,l.id DESC
+       LIMIT ${dataParams.length - 1} OFFSET ${dataParams.length}`, dataParams);
+    const total = counts.rows[0].total;
+    return sendJson(res, 200, { rows: result.rows, page, pageSize, total, pages: Math.ceil(total / pageSize), requestId });
+  }
+
   if (pathname === '/api/v1/market/projects/compare') {
     const idsRaw = url.searchParams.get('ids') || '';
     const ids = [...new Set(idsRaw.split(',').map(value => value.trim()).filter(Boolean))];
@@ -389,8 +431,10 @@ async function route(req, res, requestId) {
 }
 
 let indexHtml;
+let marketHtml;
 try {
   indexHtml = await fs.readFile(indexPath, 'utf8');
+  marketHtml = await fs.readFile(marketPath, 'utf8');
   if (!/<script\b(?=[^>]*\bid=["']reja-data["'])(?=[^>]*\btype=["']application\/json["'])[^>]*>/.test(indexHtml)) {
     throw new Error('public/index.html is missing the reja-data JSON script element.');
   }
@@ -416,6 +460,10 @@ const server = http.createServer(async (req, res) => {
       if (html === indexHtml) throw new Error('Failed to inject SQL-backed dataset into the HTML template.');
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': Buffer.byteLength(html) });
       return res.end(html);
+    }
+    if (req.method === 'GET' && (url.pathname === '/market' || url.pathname === '/market.html')) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': Buffer.byteLength(marketHtml) });
+      return res.end(marketHtml);
     }
     if (req.method === 'GET' && url.pathname === '/favicon.ico') { res.writeHead(204); return res.end(); }
     await route(req, res, requestId);
