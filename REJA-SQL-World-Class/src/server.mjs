@@ -240,7 +240,7 @@ async function route(req, res, requestId) {
       LEFT JOIN reja.assets a ON a.id=coalesce(t.asset_id,p.asset_id) AND a.is_current=true
       JOIN reja.sources s ON s.id=t.source_id
       LEFT JOIN LATERAL (
-        SELECT count(*)::integer AS corroborating_source_count
+        SELECT count(*)::integer AS additional_source_count
           FROM reja.market_transaction_evidence e
          WHERE e.transaction_id=t.id AND e.is_current=true
       ) ev ON true`;
@@ -254,7 +254,7 @@ async function route(req, res, requestId) {
              t.transaction_channel, t.payment_method, t.verification_status,
              coalesce(a.name,p.project_name,p.building_name) AS project_name,
              p.building_name, p.unit_label, s.title AS source_title, s.publisher AS source_publisher, s.source_url,
-             coalesce(ev.corroborating_source_count,0)::integer AS corroborating_source_count
+             coalesce(ev.additional_source_count,0)::integer AS additional_source_count
         ${fromSql} ${whereSql}
        ORDER BY ${sortColumn} ${sortDir.toUpperCase()} NULLS LAST, t.transaction_date DESC, t.id DESC
        LIMIT $${dataParams.length - 1} OFFSET $${dataParams.length}`, dataParams);
