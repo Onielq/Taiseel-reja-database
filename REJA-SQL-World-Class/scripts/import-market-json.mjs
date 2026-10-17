@@ -52,8 +52,10 @@ function decimal(value, label, { optional = false, positive = false, maxDigits =
     fail(`${label} is required.`);
   }
   const stringValue = String(value).trim();
-  const pattern = maxDigits === 0 ? /^-?\d+$/ : new RegExp(`^-?\\d+(?:\\.\\d{1,${maxDigits}})?$`);
-  if (!pattern.test(stringValue)) fail(`${label} must be a valid decimal with at most ${maxDigits} decimal places.`);
+  const match = /^-?(?:\d+)(?:\.(\d+))?$/.exec(stringValue);
+  if (!match || (match[1]?.length ?? 0) > maxDigits) {
+    fail(`${label} must be a valid decimal with at most ${maxDigits} decimal places.`);
+  }
   const numberValue = Number(stringValue);
   if (!Number.isFinite(numberValue) || (positive && numberValue <= 0)) fail(`${label} must be a finite number${positive ? ' greater than zero' : ''}.`);
   return stringValue;
