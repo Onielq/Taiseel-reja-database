@@ -4,7 +4,7 @@ import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const htmlFiles = ['public/index.html', 'public/REJA-standalone.html'];
+const htmlFiles = ['public/index.html', 'public/REJA-standalone.html', 'public/market.html'];
 const scriptPattern = /<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi;
 let checked = 0;
 for (const relativePath of htmlFiles) {
