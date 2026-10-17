@@ -130,8 +130,8 @@ try {
     sourceIds.set(source.sourceKey, result.rows[0].id);
     await client.query(
       `UPDATE reja.market_reference_benchmarks SET is_current=false, updated_at=now()
-        WHERE source_id=$1 AND observed_on<>$2::date AND is_current=true`,
-      [result.rows[0].id, source.observedOn]
+        WHERE source_id=$1 AND is_current=true`,
+      [result.rows[0].id]
     );
   }
 
