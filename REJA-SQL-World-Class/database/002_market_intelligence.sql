@@ -125,6 +125,21 @@ CREATE INDEX IF NOT EXISTS market_transaction_evidence_transaction_idx
 CREATE INDEX IF NOT EXISTS market_transaction_evidence_source_idx
     ON reja.market_transaction_evidence (source_id, last_seen_at DESC) WHERE is_current = true;
 
+-- Centralized eligibility rule: a transaction with unresolved contradictory source evidence
+-- is temporarily excluded from public metrics even if an earlier review marked it verified.
+CREATE OR REPLACE VIEW reja.market_verified_transactions AS
+SELECT t.*
+  FROM reja.market_transactions t
+ WHERE t.is_current = true
+   AND t.verification_status = 'verified'
+   AND NOT EXISTS (
+       SELECT 1
+         FROM reja.market_transaction_evidence e
+        WHERE e.transaction_id = t.id
+          AND e.is_current = true
+          AND e.evidence_status = 'contradicts'
+   );
+
 CREATE TABLE IF NOT EXISTS reja.market_listings (
     id                  bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     source_id           bigint NOT NULL REFERENCES reja.sources(id) ON DELETE RESTRICT,
@@ -195,8 +210,7 @@ SELECT
     percentile_cont(0.5) WITHIN GROUP (ORDER BY t.property_area_sqm)::numeric(14,2) AS median_area_sqm,
     min(t.transaction_date) AS earliest_transaction_date,
     max(t.transaction_date) AS latest_transaction_date
-FROM reja.market_transactions t
-WHERE t.is_current = true AND t.verification_status = 'verified'
+FROM reja.market_verified_transactions t
 GROUP BY date_trunc('month', t.transaction_date)::date, t.district_label,
          coalesce(nullif(t.sector_label, ''), 'Unknown'), t.property_type,
          t.transaction_type, t.currency, t.rent_period, t.transaction_channel;
@@ -207,9 +221,8 @@ WITH linked_transactions AS (
         coalesce(t.asset_id, p.asset_id) AS project_asset_id,
         t.transaction_type, t.currency, t.rent_period, t.transaction_channel,
         t.amount, t.price_per_sqm, t.property_area_sqm, t.transaction_date, t.property_id
-    FROM reja.market_transactions t
+    FROM reja.market_verified_transactions t
     LEFT JOIN reja.market_properties p ON p.id = t.property_id
-    WHERE t.is_current = true AND t.verification_status = 'verified'
 )
 SELECT
     a.external_id AS project_id,
@@ -231,6 +244,8 @@ GROUP BY a.external_id, a.name, lt.transaction_type, lt.currency, lt.rent_period
 
 COMMENT ON TABLE reja.market_properties IS
     'Normalized Rwanda property/building/unit identity. This record is not proof of legal title.';
+COMMENT ON VIEW reja.market_verified_transactions IS
+    'Canonical filter for current verified transactions after excluding unresolved contradictory evidence.';
 COMMENT ON TABLE reja.market_transaction_evidence IS
     'Additional source evidence links corroborate canonical transactions without duplicating deal counts.';
 COMMENT ON TABLE reja.market_transactions IS
