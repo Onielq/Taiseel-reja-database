@@ -75,7 +75,25 @@ The new Market Intelligence page is served at `http://127.0.0.1:8787/market`. It
 - `reja.market_listings` and `reja.market_listing_observations` track current asking prices and changes over time separately from completed deals.
 - Monthly area trends and project-comparison metrics are derived from current eligible records. Medians are grouped by currency, rent period, property type and transaction type so unlike records are not silently mixed.
 
-No sample transaction or market price is seeded. An empty dashboard means verified source records have not yet been imported for that filter; it does not mean no property deals occurred.
+No sample sale or rental transaction is seeded. A separate official-benchmark snapshot is now imported into its own table; those published aggregates never populate the individual transaction register. An empty deal-level dashboard means verified source records have not yet been imported for that filter; it does not mean no property deals occurred.
+
+### Official Rwanda land-price benchmarks
+
+REJA now loads **44 published aggregate indicators** from the National Land Authority's Rwanda Land Dashboard into `reja.market_reference_benchmarks`: 30 district-level averages from [the Land Prices page](https://rwandalanddashboard.lands.rw/prices), plus 14 averages by existing land-use category from [the main dashboard](https://rwandalanddashboard.lands.rw/). The snapshot is stored at `data/rwanda-land-dashboard-benchmarks.json` with source URLs and methodology notes.
+
+The dashboard displays these as two clearly separate tables:
+- **District land-price indicators:** the published district average per m², useful as a first geographic baseline.
+- **Average price by existing land use:** the dashboard-published per-m² average for each use category, explicitly labelled by the source as transaction data.
+
+**Important limitation:** the captured source tables do not state the exact period covered by these averages. The snapshot date, 17 October 2026, is when Taiseel captured the displayed values; it is **not** the date of the underlying deals. These are aggregate land indicators, not parcel-level transfers, not apartment/house comparables, and not formal valuations. REJA deliberately keeps them out of `market_transactions` and out of the verified sale/rent median calculations.
+
+The normal `npm run migrate` command applies migrations and idempotently imports the curated snapshot. To import that snapshot again after updating the JSON file with a newly checked source capture:
+
+```bash
+npm run market:benchmarks:import
+```
+
+The importer validates the exact National Land Authority dashboard domain, source identity, snapshot dates, metric type, units, amounts, and duplicate keys, then records the run in `reja.ingestion_runs`. It does not fetch a live data feed automatically; refresh the curated snapshot only after checking the source pages and their displayed values.
 
 ### Import a sourced market snapshot
 
@@ -105,6 +123,7 @@ Identical transaction observations can be linked to one canonical transaction wi
 ### Market endpoints
 
 - `GET /api/v1/market/summary` — counts of verified sales, rentals, active listings and coverage.
+- `GET /api/v1/market/benchmarks?kind=district_average_land_price` — source-linked government-published land-price aggregates, separate from individual property transactions.
 - `GET /api/v1/market/areas?limit=100` — areas represented by verified transactions.
 - `GET /api/v1/market/transactions?type=sale&propertyType=apartment&currency=RWF` — filtered transaction register.
 - `GET /api/v1/market/trends?type=sale&propertyType=apartment&currency=RWF&rentPeriod=not_applicable` — monthly median trend data.
