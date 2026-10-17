@@ -156,8 +156,7 @@ async function route(req, res, requestId) {
                count(DISTINCT lower(district_label))::integer AS districts_represented,
                count(DISTINCT currency)::integer AS currencies_represented,
                max(transaction_date) AS latest_verified_transaction_date
-          FROM reja.market_transactions
-         WHERE is_current=true AND verification_status='verified'`),
+          FROM reja.market_verified_transactions`),
       pool.query(`
         SELECT count(*) FILTER (WHERE listing_status='active')::integer AS active_listing_count,
                count(DISTINCT lower(district_label)) FILTER (WHERE listing_status='active')::integer AS listing_districts
@@ -179,8 +178,7 @@ async function route(req, res, requestId) {
              coalesce(min(sector_label) FILTER (WHERE sector_label IS NOT NULL AND sector_label <> ''), '') AS sector_label,
              count(*)::integer AS verified_transaction_count,
              max(transaction_date) AS latest_transaction_date
-        FROM reja.market_transactions
-       WHERE is_current=true AND verification_status='verified'
+        FROM reja.market_verified_transactions
        GROUP BY lower(district_label), lower(coalesce(sector_label,''))
        ORDER BY verified_transaction_count DESC, lower(min(district_label)), lower(min(sector_label))
        LIMIT $1`, [limit]);
@@ -237,7 +235,7 @@ async function route(req, res, requestId) {
     if (fromDate) where.push(`t.transaction_date >= ${bind(fromDate)}::date`);
     if (toDate) where.push(`t.transaction_date <= ${bind(toDate)}::date`);
     if (q) where.push(`(lower(t.district_label || ' ' || coalesce(t.sector_label,'') || ' ' || coalesce(p.project_name,'') || ' ' || coalesce(p.building_name,'') || ' ' || coalesce(p.unit_label,'') || ' ' || coalesce(a.name,'')) LIKE '%' || lower(${bind(q)}) || '%')`);
-    const fromSql = `FROM reja.market_transactions t
+    const fromSql = `FROM reja.market_verified_transactions t
       LEFT JOIN reja.market_properties p ON p.id=t.property_id
       LEFT JOIN reja.assets a ON a.id=coalesce(t.asset_id,p.asset_id) AND a.is_current=true
       JOIN reja.sources s ON s.id=t.source_id`;
@@ -294,7 +292,7 @@ async function route(req, res, requestId) {
              percentile_cont(0.5) WITHIN GROUP (ORDER BY amount)::numeric(20,2) AS median_amount,
              percentile_cont(0.5) WITHIN GROUP (ORDER BY price_per_sqm)::numeric(20,2) AS median_price_per_sqm,
              percentile_cont(0.5) WITHIN GROUP (ORDER BY property_area_sqm)::numeric(14,2) AS median_area_sqm
-        FROM reja.market_transactions
+        FROM reja.market_verified_transactions
        WHERE ${where.join(' AND ')}
        GROUP BY date_trunc('month', transaction_date)::date, currency, rent_period, transaction_type, property_type
        ORDER BY month_start ASC
