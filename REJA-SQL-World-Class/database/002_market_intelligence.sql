@@ -100,6 +100,31 @@ CREATE INDEX IF NOT EXISTS market_transactions_property_idx
 CREATE INDEX IF NOT EXISTS market_transactions_payload_gin_idx
     ON reja.market_transactions USING gin (payload jsonb_path_ops) WHERE is_current = true;
 
+-- Additional source records can corroborate or challenge a canonical transaction
+-- without counting that same deal multiple times in the aggregate views.
+CREATE TABLE IF NOT EXISTS reja.market_transaction_evidence (
+    id                  bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    transaction_id      bigint NOT NULL REFERENCES reja.market_transactions(id) ON DELETE CASCADE,
+    source_id           bigint NOT NULL REFERENCES reja.sources(id) ON DELETE RESTRICT,
+    source_record_key   text NOT NULL CHECK (length(btrim(source_record_key)) BETWEEN 1 AND 200),
+    evidence_role       text NOT NULL DEFAULT 'corroborating'
+                        CHECK (evidence_role IN ('corroborating','correction','dispute','other')),
+    evidence_status     text NOT NULL DEFAULT 'unreviewed'
+                        CHECK (evidence_status IN ('supports','contradicts','unreviewed','resolved')),
+    source_url          text CHECK (source_url IS NULL OR source_url ~* '^https?://'),
+    first_seen_at       timestamptz NOT NULL DEFAULT now(),
+    last_seen_at        timestamptz NOT NULL DEFAULT now(),
+    is_current          boolean NOT NULL DEFAULT true,
+    payload             jsonb NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(payload) = 'object'),
+    CHECK (last_seen_at >= first_seen_at)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS market_transaction_evidence_source_key_uq
+    ON reja.market_transaction_evidence (source_id, source_record_key) WHERE is_current = true;
+CREATE INDEX IF NOT EXISTS market_transaction_evidence_transaction_idx
+    ON reja.market_transaction_evidence (transaction_id, evidence_status) WHERE is_current = true;
+CREATE INDEX IF NOT EXISTS market_transaction_evidence_source_idx
+    ON reja.market_transaction_evidence (source_id, last_seen_at DESC) WHERE is_current = true;
+
 CREATE TABLE IF NOT EXISTS reja.market_listings (
     id                  bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     source_id           bigint NOT NULL REFERENCES reja.sources(id) ON DELETE RESTRICT,
@@ -147,7 +172,82 @@ CREATE TABLE IF NOT EXISTS reja.market_listing_observations (
     listing_id          bigint NOT NULL REFERENCES reja.market_listings(id) ON DELETE CASCADE,
     observed_at         timestamptz NOT NULL DEFAULT now(),
     asking_amount       numeric(20,2) NOT NULL CHECK (asking_amount > 0),
-    currency            char(3) NOT NULL CHECK (currency ~ '^[A-Z]{3}$'),
+    currency            char(3) NOT NULL CHECK (currency ~ '^[A-Z]{3}
+CREATE INDEX IF NOT EXISTS market_listing_observations_history_idx
+    ON reja.market_listing_observations (listing_id, observed_at DESC);
+
+-- Only explicitly verified transactions contribute to these public-facing aggregates.
+-- Currency and rent period stay in the grouping keys, preventing unlike values from being mixed.
+CREATE OR REPLACE VIEW reja.market_area_monthly_metrics AS
+SELECT
+    date_trunc('month', t.transaction_date)::date AS month_start,
+    t.district_label,
+    coalesce(nullif(t.sector_label, ''), 'Unknown') AS sector_label,
+    t.property_type,
+    t.transaction_type,
+    t.currency,
+    t.rent_period,
+    t.transaction_channel,
+    count(*)::integer AS transaction_count,
+    count(DISTINCT t.property_id)::integer AS distinct_property_count,
+    percentile_cont(0.5) WITHIN GROUP (ORDER BY t.amount)::numeric(20,2) AS median_amount,
+    percentile_cont(0.5) WITHIN GROUP (ORDER BY t.price_per_sqm)::numeric(20,2) AS median_price_per_sqm,
+    percentile_cont(0.5) WITHIN GROUP (ORDER BY t.property_area_sqm)::numeric(14,2) AS median_area_sqm,
+    min(t.transaction_date) AS earliest_transaction_date,
+    max(t.transaction_date) AS latest_transaction_date
+FROM reja.market_transactions t
+WHERE t.is_current = true AND t.verification_status = 'verified'
+GROUP BY date_trunc('month', t.transaction_date)::date, t.district_label,
+         coalesce(nullif(t.sector_label, ''), 'Unknown'), t.property_type,
+         t.transaction_type, t.currency, t.rent_period, t.transaction_channel;
+
+CREATE OR REPLACE VIEW reja.market_project_metrics AS
+WITH linked_transactions AS (
+    SELECT
+        coalesce(t.asset_id, p.asset_id) AS project_asset_id,
+        t.transaction_type, t.currency, t.rent_period, t.transaction_channel,
+        t.amount, t.price_per_sqm, t.property_area_sqm, t.transaction_date, t.property_id
+    FROM reja.market_transactions t
+    LEFT JOIN reja.market_properties p ON p.id = t.property_id
+    WHERE t.is_current = true AND t.verification_status = 'verified'
+)
+SELECT
+    a.external_id AS project_id,
+    a.name AS project_name,
+    lt.transaction_type,
+    lt.currency,
+    lt.rent_period,
+    lt.transaction_channel,
+    count(*)::integer AS transaction_count,
+    count(DISTINCT lt.property_id)::integer AS distinct_property_count,
+    percentile_cont(0.5) WITHIN GROUP (ORDER BY lt.amount)::numeric(20,2) AS median_amount,
+    percentile_cont(0.5) WITHIN GROUP (ORDER BY lt.price_per_sqm)::numeric(20,2) AS median_price_per_sqm,
+    percentile_cont(0.5) WITHIN GROUP (ORDER BY lt.property_area_sqm)::numeric(14,2) AS median_area_sqm,
+    max(lt.transaction_date) AS latest_transaction_date
+FROM linked_transactions lt
+JOIN reja.assets a ON a.id = lt.project_asset_id
+WHERE a.asset_type = 'project' AND a.is_current = true
+GROUP BY a.external_id, a.name, lt.transaction_type, lt.currency, lt.rent_period, lt.transaction_channel;
+
+COMMENT ON TABLE reja.market_properties IS
+    'Normalized Rwanda property/building/unit identity. This record is not proof of legal title.';
+COMMENT ON TABLE reja.market_transaction_evidence IS
+    'Additional source evidence links corroborate canonical transactions without duplicating deal counts.';
+COMMENT ON TABLE reja.market_transactions IS
+    'Source-linked sale/rent observations. Only verified current records enter market aggregates.';
+COMMENT ON TABLE reja.market_listings IS
+    'Asking-price observations; these must never be presented as completed transactions.';
+COMMENT ON VIEW reja.market_area_monthly_metrics IS
+    'Monthly aggregates of verified current transactions, grouped by currency and rent period.';
+),
+    rent_period         text NOT NULL DEFAULT 'not_applicable'
+                        CHECK (rent_period IN ('not_applicable','daily','weekly','monthly','yearly')),
+    property_area_sqm   numeric(14,2) CHECK (property_area_sqm IS NULL OR property_area_sqm > 0),
+    asking_price_per_sqm numeric(20,2) GENERATED ALWAYS AS (
+                            CASE WHEN property_area_sqm IS NOT NULL AND property_area_sqm > 0
+                                 THEN round(asking_amount / property_area_sqm, 2)
+                                 ELSE NULL END
+                        ) STORED,
     listing_status      text NOT NULL CHECK (listing_status IN ('active','withdrawn','expired','sold_or_leased','unknown')),
     payload             jsonb NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(payload) = 'object'),
     UNIQUE (listing_id, observed_at)
