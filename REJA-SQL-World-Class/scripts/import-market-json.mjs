@@ -311,26 +311,30 @@ async function upsertProperty(client, row) {
   return result.rows[0].id;
 }
 
-async function linkAdditionalEvidence(client, { transactionId, sourceId, sourceRecordKey, evidenceStatus, payload }) {
+async function linkAdditionalEvidence(client, {
+  transactionId, sourceId, sourceRecordKey, evidenceStatus, defaultEvidenceStatus, sourceUrl, payload
+}) {
   const existing = await client.query(`
     SELECT id,transaction_id FROM reja.market_transaction_evidence
      WHERE source_id=$1 AND source_record_key=$2 AND is_current=true
      LIMIT 1`, [sourceId, sourceRecordKey]);
   if (existing.rowCount && Number(existing.rows[0].transaction_id) === Number(transactionId)) {
     await client.query(
-      'UPDATE reja.market_transaction_evidence SET last_seen_at=now(),payload=$2::jsonb,evidence_status=$3 WHERE id=$1',
-      [existing.rows[0].id, JSON.stringify(payload), evidenceStatus]
+      'UPDATE reja.market_transaction_evidence SET last_seen_at=now(),payload=$2::jsonb,evidence_status=coalesce($3,evidence_status),source_url=coalesce($4,source_url) WHERE id=$1',
+      [existing.rows[0].id, JSON.stringify(payload), evidenceStatus, sourceUrl]
     );
     return;
   }
   if (existing.rowCount) {
     await client.query('UPDATE reja.market_transaction_evidence SET is_current=false,last_seen_at=now() WHERE id=$1', [existing.rows[0].id]);
   }
+  const resolvedStatus = evidenceStatus || defaultEvidenceStatus;
+  const evidenceRole = resolvedStatus === 'contradicts' ? 'dispute' : 'corroborating';
   await client.query(`
     INSERT INTO reja.market_transaction_evidence
       (transaction_id,source_id,source_record_key,evidence_role,evidence_status,source_url,payload)
-    VALUES ($1,$2,$3,'corroborating',$4,NULL,$5::jsonb)`, [
-    transactionId, sourceId, sourceRecordKey, evidenceStatus, JSON.stringify(payload)
+    VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb)`, [
+    transactionId, sourceId, sourceRecordKey, evidenceRole, resolvedStatus, sourceUrl, JSON.stringify(payload)
   ]);
 }
 
@@ -393,7 +397,9 @@ async function importSnapshot(client, snapshot, fileHash, fileName) {
         if (!isPrimary) {
           await linkAdditionalEvidence(client, {
             transactionId, sourceId, sourceRecordKey: row.sourceRecordKey,
-            evidenceStatus: row.evidenceStatus || (row.verificationStatus === 'verified' ? 'supports' : 'unreviewed'),
+            evidenceStatus: row.evidenceStatus,
+            defaultEvidenceStatus: row.verificationStatus === 'verified' ? 'supports' : 'unreviewed',
+            sourceUrl: source.sourceUrl,
             payload: row.payload
           });
           linkedEvidence += 1;
