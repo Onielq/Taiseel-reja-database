@@ -9,13 +9,12 @@
   },
   "scripts": {
     "start": "node --env-file=.env src/server.mjs",
-    "migrate": "node --env-file=.env scripts/migrate.mjs && node --env-file=.env scripts/import-market-benchmarks.mjs",
+    "migrate": "node --env-file=.env scripts/migrate.mjs",
     "import:html": "node --env-file=.env scripts/import-html.mjs",
     "import:file": "node --env-file=.env scripts/import-html.mjs",
     "test": "node --test",
-    "check": "node scripts/check-frontend.mjs && node --check src/server.mjs && node --check src/db.mjs && node --check src/bootstrap.mjs && node --check src/legacy-data.mjs && node --check scripts/migrate.mjs && node --check scripts/import-html.mjs && node --check scripts/import-market-json.mjs && node --check scripts/import-market-benchmarks.mjs && node --test",
-    "market:import": "node --env-file=.env scripts/import-market-json.mjs",
-    "market:benchmarks:import": "node --env-file=.env scripts/import-market-benchmarks.mjs"
+    "check": "node scripts/check-frontend.mjs && node --check src/server.mjs && node --check src/db.mjs && node --check src/bootstrap.mjs && node --check src/legacy-data.mjs && node --check scripts/migrate.mjs && node --check scripts/import-html.mjs && node --check scripts/import-market-json.mjs && node --test",
+    "market:import": "node --env-file=.env scripts/import-market-json.mjs"
   },
   "dependencies": {
     "impeccable": "^4.5.2",

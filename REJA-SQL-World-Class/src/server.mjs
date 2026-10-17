@@ -147,59 +147,6 @@ async function route(req, res, requestId) {
     return sendJson(res, 200, { rows: result.rows, count: result.rowCount, requestId });
   }
 
-  if (pathname === '/api/v1/market/benchmarks') {
-    const kind = url.searchParams.get('kind') || 'all';
-    const q = (url.searchParams.get('q') || '').trim().slice(0, 120);
-    const limit = readInt(url.searchParams.get('limit'), 100, 1, 500);
-    if (!['all','district_average_land_price','land_use_transaction_average'].includes(kind)) {
-      return sendError(res, 400, 'INVALID_BENCHMARK_KIND', 'kind must be all, district_average_land_price, or land_use_transaction_average.', requestId);
-    }
-    if (limit === null) return sendError(res, 400, 'INVALID_LIMIT', 'limit must be an integer from 1 to 500.', requestId);
-    const [data, summary] = await Promise.all([
-      pool.query(
-        `SELECT b.id,b.benchmark_kind,b.geography_level,b.district_label,b.land_use_label,
-                b.metric_code,b.amount,b.currency,b.unit_code,b.observed_on,
-                b.source_period_label,b.methodology_note,
-                s.title AS source_title,s.publisher AS source_publisher,s.source_url
-           FROM reja.market_reference_benchmarks b
-           JOIN reja.sources s ON s.id=b.source_id
-          WHERE b.is_current=true
-            AND ($1='all' OR b.benchmark_kind=$1)
-            AND ($2='' OR lower(coalesce(b.district_label,'') || ' ' || coalesce(b.land_use_label,'')) LIKE '%' || lower($2) || '%')
-          ORDER BY b.benchmark_kind,
-                   CASE WHEN b.benchmark_kind='district_average_land_price' THEN b.amount END DESC,
-                   CASE WHEN b.benchmark_kind='land_use_transaction_average' THEN b.amount END DESC,
-                   lower(coalesce(b.district_label,b.land_use_label))
-          LIMIT $3`,
-        [kind, q, limit]
-      ),
-      pool.query(
-        `SELECT count(*)::integer AS total,
-                count(*) FILTER (WHERE benchmark_kind='district_average_land_price')::integer AS district_average_count,
-                count(*) FILTER (WHERE benchmark_kind='land_use_transaction_average')::integer AS land_use_average_count,
-                count(DISTINCT source_id)::integer AS source_count,
-                max(observed_on) AS latest_snapshot_date
-           FROM reja.market_reference_benchmarks
-          WHERE is_current=true`
-      )
-    ]);
-    return sendJson(res, 200, {
-      rows: data.rows,
-      total: data.rowCount,
-      limit,
-      filters: { kind, q: q || null },
-      summary: summary.rows[0],
-      methodology: {
-        individualTransactions: false,
-        formalValuation: false,
-        periodDisclosedBySource: false,
-        note: 'These are source-published aggregate land indicators. The source pages captured in this snapshot do not specify the exact underlying reporting period. Do not treat them as individual sale records, apartment/house comparables, or a formal valuation.',
-        snapshotDateMeaning: 'Date Taiseel captured the displayed source snapshot, not the underlying transaction date.'
-      },
-      requestId
-    });
-  }
-
   if (pathname === '/api/v1/market/summary') {
     const [transactions, listings] = await Promise.all([
       pool.query(`
