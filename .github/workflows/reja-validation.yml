@@ -14,6 +14,22 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgres://reja@127.0.0.1:5432/reja
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: reja
+          POSTGRES_DB: reja
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U reja -d reja"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -29,3 +45,22 @@ jobs:
       - name: Validate source and tests
         working-directory: REJA-SQL-World-Class
         run: npm run check
+      - name: Prepare local environment
+        working-directory: REJA-SQL-World-Class
+        run: cp .env.example .env
+      - name: Apply PostgreSQL migrations
+        working-directory: REJA-SQL-World-Class
+        run: npm run migrate
+      - name: Smoke-test market read APIs
+        working-directory: REJA-SQL-World-Class
+        run: |
+          npm start > /tmp/reja-server.log 2>&1 &
+          APP_PID=$!
+          trap 'kill "$APP_PID" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8787/api/v1/health > /tmp/reja-health.json; then break; fi
+            sleep 1
+          done
+          grep -q '"status":"ok"' /tmp/reja-health.json
+          curl -fsS http://127.0.0.1:8787/api/v1/market/summary
+          curl -fsS http://127.0.0.1:8787/market | grep -q 'Know what properties'
