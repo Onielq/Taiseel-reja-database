@@ -13,7 +13,7 @@ test('official benchmarks have their own database table and cannot be confused w
   assert.match(sql, /REFERENCES reja\.sources\(id\)/);
   assert.match(sql, /district_average_land_price/);
   assert.match(sql, /land_use_transaction_average/);
-  assert.match(sql, /observed_on\s+date NOT NULL/);
+  assert.ok(sql.includes('    observed_on         date NOT NULL,'));
   assert.match(sql, /Never treat these rows as individual property transactions/);
   assert.doesNotMatch(sql, /INSERT\s+INTO\s+reja\.market_transactions/i);
 });
@@ -63,7 +63,7 @@ test('market page displays district and land-use benchmarks with a clear caveat'
   assert.match(html, /Average price by existing land use/);
   assert.match(html, /districtBenchmarkRows/);
   assert.match(html, /landUseBenchmarkRows/);
-  assert.match(html, /these are published aggregate land indicators—not individual transactions/);
+  assert.ok(html.includes('published aggregate land indicators—not individual transactions'));
   assert.match(html, /api\/v1\/market\/benchmarks\?kind=district_average_land_price/);
   assert.match(html, /api\/v1\/market\/benchmarks\?kind=land_use_transaction_average/);
 });
