@@ -183,11 +183,23 @@ CREATE INDEX IF NOT EXISTS market_listings_price_idx
     WHERE is_current = true AND listing_status = 'active';
 
 CREATE TABLE IF NOT EXISTS reja.market_listing_observations (
-    id                  bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    listing_id          bigint NOT NULL REFERENCES reja.market_listings(id) ON DELETE CASCADE,
-    observed_at         timestamptz NOT NULL DEFAULT now(),
-    asking_amount       numeric(20,2) NOT NULL CHECK (asking_amount > 0),
-    currency            char(3) NOT NULL CHECK (currency ~ '^[A-Z]{3}
+    id                   bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    listing_id           bigint NOT NULL REFERENCES reja.market_listings(id) ON DELETE CASCADE,
+    observed_at          timestamptz NOT NULL DEFAULT now(),
+    asking_amount        numeric(20,2) NOT NULL CHECK (asking_amount > 0),
+    currency             char(3) NOT NULL CHECK (currency ~ '^[A-Z]{3}' AND currency = upper(currency)),
+    rent_period          text NOT NULL DEFAULT 'not_applicable'
+                         CHECK (rent_period IN ('not_applicable','daily','weekly','monthly','yearly')),
+    property_area_sqm    numeric(14,2) CHECK (property_area_sqm IS NULL OR property_area_sqm > 0),
+    asking_price_per_sqm numeric(20,2) GENERATED ALWAYS AS (
+                             CASE WHEN property_area_sqm IS NOT NULL AND property_area_sqm > 0
+                                  THEN round(asking_amount / property_area_sqm, 2)
+                                  ELSE NULL END
+                         ) STORED,
+    listing_status       text NOT NULL CHECK (listing_status IN ('active','withdrawn','expired','sold_or_leased','unknown')),
+    payload              jsonb NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(payload) = 'object'),
+    UNIQUE (listing_id, observed_at)
+);
 CREATE INDEX IF NOT EXISTS market_listing_observations_history_idx
     ON reja.market_listing_observations (listing_id, observed_at DESC);
 
