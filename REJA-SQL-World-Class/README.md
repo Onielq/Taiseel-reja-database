@@ -66,6 +66,14 @@ The importer does not infer that a source is governmental from `rdb`, `rha`, or 
 
 The new Market Intelligence page is served at `http://127.0.0.1:8787/market`. It is designed around a simple distinction: **a listing is an asking price; a verified transaction is evidence of a completed deal**. It borrows the useful transaction-first ideas of Dubai market tools but is built for Rwanda sources, geography, and currency.
 
+### Dubai REST: the second reference
+
+DXB Interact informs the public market-analytics layer. Dubai REST informs a separate **private property-services layer**: a secure property wallet, lease lifecycle, project-progress monitoring, source-backed provider records and owner/tenant case tracking. Dubai Land Department documents these features on its [official Dubai REST service page](https://dubailand.gov.ae/en/eservices/dubai-rest/) and [official FAQ](https://dubailand.gov.ae/en/frequently-asked-questions/).
+
+Taiseel must adapt these patterns to Rwanda rather than copy Dubai-specific legal terms or imply official integrations. The current market PR does **not** implement an owner wallet, lease management or government integration. Those require authentication, user-level authorization, privacy controls, audit logs and supported Rwanda data sources first.
+
+The detailed feature mapping, evidence labels, proposed future data model, build phases and acceptance tests are in [`docs/DUBAI-REST-REFERENCE.md`](docs/DUBAI-REST-REFERENCE.md).
+
 ### What this adds
 
 - `reja.market_properties` identifies buildings, units, property types and locations.
