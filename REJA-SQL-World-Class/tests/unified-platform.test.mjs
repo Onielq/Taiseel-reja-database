@@ -67,3 +67,20 @@ test('migration is schema-only and never seeds fake users, source claims, listin
   assert.match(sql, /not proof of title/i);
   assert.match(sql, /NULL means commercial reuse permission has not been established/i);
 });
+
+test('organization identity links to existing developer records without self-verification', async () => {
+  const sql = await read('database/003_unified_platform.sql');
+  assert.match(sql, /CREATE TABLE IF NOT EXISTS reja\.organization_developer_links/);
+  assert.match(sql, /organizations_protect_verification_fields/);
+  assert.match(sql, /Only a platform administrator may change organization verification state/);
+  assert.match(sql, /sources_positive_permission_requires_permitted_license/);
+});
+
+test('runtime roles explicitly do not bypass row-level security', async () => {
+  const readonlyRole = await read('database/runtime_readonly_role.sql');
+  const exchangeRole = await read('database/runtime_exchange_role.sql');
+  assert.match(readonlyRole, /ALTER ROLE reja_app LOGIN NOBYPASSRLS/);
+  assert.match(exchangeRole, /ALTER ROLE reja_exchange_app LOGIN NOBYPASSRLS/);
+  assert.match(exchangeRole, /GRANT INSERT, UPDATE ON reja\.exchange_listings/);
+  assert.doesNotMatch(exchangeRole, /GRANT DELETE ON reja\./);
+});
