@@ -20,6 +20,13 @@ ALTER TABLE reja.sources
   ADD COLUMN IF NOT EXISTS license_review_notes text;
 CREATE INDEX IF NOT EXISTS sources_license_status_idx
   ON reja.sources (license_status, commercial_use_allowed, redistribution_allowed);
+ALTER TABLE reja.sources
+  ADD CONSTRAINT sources_positive_permission_requires_permitted_license
+  CHECK (
+    (commercial_use_allowed IS NOT TRUE OR license_status = 'permitted')
+    AND (redistribution_allowed IS NOT TRUE OR license_status = 'permitted')
+    AND (caching_allowed IS NOT TRUE OR license_status = 'permitted')
+  );
 
 -- Provider identity only. Passwords and session tokens stay with the selected
 -- identity provider; provider subject IDs are not exposed as public profile IDs.
@@ -115,6 +122,21 @@ CREATE TABLE IF NOT EXISTS reja.platform_user_roles (
   revoked_at timestamptz,
   PRIMARY KEY (user_id, platform_role)
 );
+
+CREATE TABLE IF NOT EXISTS reja.organization_developer_links (
+  organization_id bigint NOT NULL REFERENCES reja.organizations(id) ON DELETE CASCADE,
+  developer_external_id text NOT NULL REFERENCES reja.developers(external_id) ON DELETE RESTRICT,
+  relationship_status text NOT NULL DEFAULT 'pending'
+    CHECK (relationship_status IN ('pending','verified','rejected','historical','disputed')),
+  relationship_role text NOT NULL DEFAULT 'developer'
+    CHECK (relationship_role IN ('developer','consortium_member','historical','other')),
+  source_id bigint REFERENCES reja.sources(id) ON DELETE RESTRICT,
+  last_verified_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (organization_id, developer_external_id)
+);
+CREATE INDEX IF NOT EXISTS organization_developer_links_developer_idx
+  ON reja.organization_developer_links (developer_external_id, relationship_status);
 
 -- The trusted backend sets this transaction-locally after verifying a signed
 -- session. An unset context returns NULL, and private policies deny access.
@@ -457,8 +479,38 @@ ALTER TABLE reja.data_quality_issues
 ALTER TABLE reja.data_quality_issues
   ADD CONSTRAINT data_quality_issues_entity_type_check CHECK (entity_type IN (
     'asset','developer','source','owner_group','dataset','organization','geo_area','parcel',
-    'development_phase','development_building','development_unit','market_property','transaction','listing'
+    'development_phase','development_building','development_unit','market_property','transaction','listing','organization_developer_link'
   ));
+
+CREATE OR REPLACE FUNCTION reja.protect_app_user_security_fields()
+RETURNS trigger LANGUAGE plpgsql SET search_path = pg_catalog, reja AS $
+BEGIN
+  IF (NEW.account_status, NEW.email_verified_at)
+       IS DISTINCT FROM (OLD.account_status, OLD.email_verified_at)
+     AND NOT reja.has_platform_role(ARRAY['admin']) THEN
+    RAISE EXCEPTION 'Only a platform administrator may change account security state';
+  END IF;
+  RETURN NEW;
+END
+$;
+CREATE TRIGGER app_users_protect_security_fields
+BEFORE UPDATE OF account_status, email_verified_at ON reja.app_users
+FOR EACH ROW EXECUTE FUNCTION reja.protect_app_user_security_fields();
+
+CREATE OR REPLACE FUNCTION reja.protect_organization_verification_fields()
+RETURNS trigger LANGUAGE plpgsql SET search_path = pg_catalog, reja AS $
+BEGIN
+  IF (NEW.verification_status, NEW.verified_by_user_id, NEW.verified_at, NEW.verification_source_id)
+       IS DISTINCT FROM (OLD.verification_status, OLD.verified_by_user_id, OLD.verified_at, OLD.verification_source_id)
+     AND NOT reja.has_platform_role(ARRAY['admin']) THEN
+    RAISE EXCEPTION 'Only a platform administrator may change organization verification state';
+  END IF;
+  RETURN NEW;
+END
+$;
+CREATE TRIGGER organizations_protect_verification_fields
+BEFORE UPDATE OF verification_status, verified_by_user_id, verified_at, verification_source_id ON reja.organizations
+FOR EACH ROW EXECUTE FUNCTION reja.protect_organization_verification_fields();
 
 -- Account and organization policies.
 ALTER TABLE reja.app_users ENABLE ROW LEVEL SECURITY;
@@ -635,6 +687,7 @@ CREATE POLICY exchange_events_insert_party ON reja.exchange_listing_events FOR I
         OR reja.has_platform_role(ARRAY['admin','moderator'])
       )
     )
+    AND (event_type NOT IN ('approved','rejected') OR reja.has_platform_role(ARRAY['admin','moderator']))
   );
 
 COMMENT ON TABLE reja.geo_areas IS
