@@ -35,13 +35,13 @@ Never accept a user UUID from an untrusted browser payload and write it into thi
 
 A user's newly created organization can receive its first owner membership through the bootstrap policy. Additional memberships require an active owner/admin or platform administrator. Platform roles are provisioned only through a controlled operator process.
 
-A seller can submit authorization evidence but cannot verify their own claim. Verification requires a platform moderator/admin. The schema provides policy boundaries; it does not yet implement an authentication UI, invitation email delivery, moderation console, or government verification integration.
+A seller can submit authorization evidence but cannot verify their own claim. Verification requires a platform moderator/admin. Organization owners can update their organization profile but cannot change its verification fields themselves; the database trigger reserves that decision for a platform admin. The schema provides policy boundaries; it does not yet implement an authentication UI, invitation email delivery, moderation console, or government verification integration.
 
 ## Runtime and migration sequence
 
 1. Provision a development PostgreSQL project with PostGIS enabled.
 2. Apply migrations in order: `001_initial_schema.sql`, `002_market_intelligence.sql`, `003_unified_platform.sql`.
-3. Create least-privilege runtime roles. The public application should receive read access only to approved public datasets. Listing writes must use a server-side role with RLS enforced.
+3. Create the least-privilege roles with `database/runtime_readonly_role.sql` and `database/runtime_exchange_role.sql`. The public application should use the read-only role. Listing writes must use the separate `reja_exchange_app` role with `NOBYPASSRLS`; set a strong password and keep it server-side.
 4. Choose and integrate the identity provider. Until verified signed-session context exists, keep user and listing writes disabled.
 5. Connect Vercel and Cloudflare Worker runtimes to the same database using pooled request-time connections; use a direct connection for migrations. Cloudflare currently recommends Hyperdrive with `pg` for Workers; the Neon serverless driver is also supported.
 6. Import research records as unverified/source-documented claims, preserving source URLs, dates and conflicts. Do not bulk-mark records verified.
