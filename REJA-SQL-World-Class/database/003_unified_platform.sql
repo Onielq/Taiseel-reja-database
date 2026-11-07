@@ -352,7 +352,7 @@ CREATE TABLE IF NOT EXISTS reja.listing_authorizations (
   review_notes text,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  CHECK ((seller_user_id IS NOT NULL)::integer + (seller_organization_id IS NOT NULL)::integer = 1),
+  CHECK ((seller_user_id IS NOT NULL AND seller_organization_id IS NULL) OR (seller_user_id IS NULL AND seller_organization_id IS NOT NULL)),
   CHECK (valid_until IS NULL OR valid_from IS NULL OR valid_until >= valid_from),
   CHECK ((authorization_status = 'verified' AND reviewed_at IS NOT NULL AND reviewed_by_user_id IS NOT NULL)
     OR authorization_status <> 'verified')
@@ -408,7 +408,7 @@ CREATE TABLE IF NOT EXISTS reja.exchange_listings (
   payload jsonb NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(payload) = 'object'),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  CHECK ((seller_user_id IS NOT NULL)::integer + (seller_organization_id IS NOT NULL)::integer = 1),
+  CHECK ((seller_user_id IS NOT NULL AND seller_organization_id IS NULL) OR (seller_user_id IS NULL AND seller_organization_id IS NOT NULL)),
   CHECK ((listing_type = 'sale' AND rent_period = 'not_applicable')
     OR (listing_type = 'rent' AND rent_period <> 'not_applicable')),
   CHECK (publication_status <> 'published' OR (listing_authorization_id IS NOT NULL AND published_at IS NOT NULL))
