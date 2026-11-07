@@ -183,3 +183,10 @@ Run restore tests periodically; a backup is not verified until restore succeeds.
 - Create new numbered migration files instead of editing an applied migration. The runner checks migration checksums and fails if an already-applied file changes.
 - Keep import snapshots, backups, source provenance and data-quality issues under retention policy. Do not treat the imported legacy payload as a legal title or verified transaction register.
 - Risk and confidence fields are stored as supplied; this layer does not claim that the underlying source material has been independently verified.
+
+
+## Unified four-pillar platform foundation
+
+Migration `database/003_unified_platform.sql` adds normalized Rwanda geography and parcel provenance, structured project phases/buildings/units, external user identity, organizations and memberships, seller authorization and first-party exchange listing lifecycle. It also records data-source reuse permissions and applies row-level security to private identity and listing records.
+
+Read [the unified platform foundation guide](docs/UNIFIED_PLATFORM_FOUNDATION.md) before connecting an application or applying the migration to a live database. The migration creates schema only: it does not seed sample records, create an identity provider, provision a Neon project or publish listings.
