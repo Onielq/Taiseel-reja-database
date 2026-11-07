@@ -18,7 +18,7 @@ jobs:
       DATABASE_URL: postgres://reja@127.0.0.1:5432/reja
     services:
       postgres:
-        image: postgres:15
+        image: postgis/postgis:15-3.5
         env:
           POSTGRES_USER: reja
           POSTGRES_DB: reja
@@ -51,6 +51,17 @@ jobs:
       - name: Apply PostgreSQL migrations
         working-directory: REJA-SQL-World-Class
         run: npm run migrate
+      - name: Verify unified PostGIS schema
+        working-directory: REJA-SQL-World-Class
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT postgis_full_version();"
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT to_regclass('reja.geo_areas'), to_regclass('reja.parcels'), to_regclass('reja.development_units'), to_regclass('reja.exchange_listings');"
+      - name: Verify least-privilege runtime roles
+        working-directory: REJA-SQL-World-Class
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/runtime_readonly_role.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/runtime_exchange_role.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT rolname, rolbypassrls FROM pg_roles WHERE rolname IN ('reja_app','reja_exchange_app') ORDER BY rolname;"
       - name: Smoke-test the source-aware market importer
         working-directory: REJA-SQL-World-Class
         run: |
