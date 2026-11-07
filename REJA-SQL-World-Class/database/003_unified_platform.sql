@@ -365,13 +365,16 @@ CREATE INDEX IF NOT EXISTS listing_authorizations_org_idx
   ON reja.listing_authorizations (seller_organization_id, authorization_status) WHERE seller_organization_id IS NOT NULL;
 
 CREATE OR REPLACE FUNCTION reja.has_verified_listing_authorization(
-  target_authorization_id bigint, target_seller_user_id uuid, target_seller_org_id bigint
+  target_authorization_id bigint, target_market_property_id bigint,
+  target_seller_user_id uuid, target_seller_org_id bigint
 )
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
 SET search_path = pg_catalog, reja AS $$
   SELECT EXISTS (
     SELECT 1 FROM reja.listing_authorizations a
-    WHERE a.id = target_authorization_id AND a.authorization_status = 'verified'
+    WHERE a.id = target_authorization_id
+      AND a.market_property_id = target_market_property_id
+      AND a.authorization_status = 'verified'
       AND (a.valid_from IS NULL OR a.valid_from <= current_date)
       AND (a.valid_until IS NULL OR a.valid_until >= current_date)
       AND (
@@ -578,7 +581,7 @@ CREATE POLICY exchange_listings_manage_party ON reja.exchange_listings FOR UPDAT
     )
     AND (
       publication_status <> 'published'
-      OR reja.has_verified_listing_authorization(listing_authorization_id, seller_user_id, seller_organization_id)
+      OR reja.has_verified_listing_authorization(listing_authorization_id, market_property_id, seller_user_id, seller_organization_id)
     )
   );
 
