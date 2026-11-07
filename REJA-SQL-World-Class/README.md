@@ -190,3 +190,8 @@ Run restore tests periodically; a backup is not verified until restore succeeds.
 Migration `database/003_unified_platform.sql` adds normalized Rwanda geography and parcel provenance, structured project phases/buildings/units, external user identity, organizations and memberships, seller authorization and first-party exchange listing lifecycle. It also records data-source reuse permissions and applies row-level security to private identity and listing records.
 
 Read [the unified platform foundation guide](docs/UNIFIED_PLATFORM_FOUNDATION.md) before connecting an application or applying the migration to a live database. The migration creates schema only: it does not seed sample records, create an identity provider, provision a Neon project or publish listings.
+
+
+### Runtime roles
+
+After applying migrations, `database/runtime_readonly_role.sql` creates the SELECT-only `reja_app` role. `database/runtime_exchange_role.sql` creates `reja_exchange_app` for authenticated, server-side account and listing operations; it has `NOBYPASSRLS`, no physical DELETE grants, and must receive a strong password before use. The application must set the trusted `reja.current_user_id` transaction-locally after verifying the user's identity. Do not connect browser code directly to either role.
