@@ -507,7 +507,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END
-$;
+$function$;
 CREATE TRIGGER organizations_protect_verification_fields
 BEFORE UPDATE OF verification_status, verified_by_user_id, verified_at, verification_source_id ON reja.organizations
 FOR EACH ROW EXECUTE FUNCTION reja.protect_organization_verification_fields();
