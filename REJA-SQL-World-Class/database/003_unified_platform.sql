@@ -483,7 +483,7 @@ ALTER TABLE reja.data_quality_issues
   ));
 
 CREATE OR REPLACE FUNCTION reja.protect_app_user_security_fields()
-RETURNS trigger LANGUAGE plpgsql SET search_path = pg_catalog, reja AS $
+RETURNS trigger LANGUAGE plpgsql SET search_path = pg_catalog, reja AS $function$
 BEGIN
   IF (NEW.account_status, NEW.email_verified_at)
        IS DISTINCT FROM (OLD.account_status, OLD.email_verified_at)
@@ -492,13 +492,13 @@ BEGIN
   END IF;
   RETURN NEW;
 END
-$;
+$function$;
 CREATE TRIGGER app_users_protect_security_fields
 BEFORE UPDATE OF account_status, email_verified_at ON reja.app_users
 FOR EACH ROW EXECUTE FUNCTION reja.protect_app_user_security_fields();
 
 CREATE OR REPLACE FUNCTION reja.protect_organization_verification_fields()
-RETURNS trigger LANGUAGE plpgsql SET search_path = pg_catalog, reja AS $
+RETURNS trigger LANGUAGE plpgsql SET search_path = pg_catalog, reja AS $function$
 BEGIN
   IF (NEW.verification_status, NEW.verified_by_user_id, NEW.verified_at, NEW.verification_source_id)
        IS DISTINCT FROM (OLD.verification_status, OLD.verified_by_user_id, OLD.verified_at, OLD.verification_source_id)
