@@ -75,5 +75,6 @@ test('first-party Taiseel listings receive a unique public reference that is not
   assert.match(sql, /UPDATE reja\.exchange_listings[\s\S]*WHERE nullif\(btrim\(listing_reference\), ''\) IS NULL/);
   assert.match(sql, /A Taiseel listing reference is immutable once assigned/);
   assert.match(sql, /exchange_listings_listing_reference_length_check/);
-  assert.match(sql, /listing_reference text UNIQUE/);
+  const baseSchema = await read('database/003_unified_platform.sql');
+  assert.match(baseSchema, /listing_reference text UNIQUE/);
 });
