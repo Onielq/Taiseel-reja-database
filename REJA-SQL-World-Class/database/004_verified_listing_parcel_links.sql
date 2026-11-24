@@ -177,10 +177,6 @@ WITH CHECK (
   )
 );
 
-GRANT SELECT ON reja.market_listing_parcel_links TO reja_app;
-GRANT SELECT, INSERT, UPDATE ON reja.market_listing_parcel_links TO reja_exchange_app;
-GRANT USAGE, SELECT ON SEQUENCE reja.market_listing_parcel_links_id_seq TO reja_exchange_app;
-
 COMMENT ON TABLE reja.market_listing_parcel_links IS
   'Evidence-backed external listing to cadastral parcel relationships. Only current, independently reviewed, source-permitted links are public.';
 COMMENT ON COLUMN reja.market_listing_parcel_links.upi_snapshot IS
