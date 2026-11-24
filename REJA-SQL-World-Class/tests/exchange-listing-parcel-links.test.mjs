@@ -67,3 +67,13 @@ test('exchange runtime role can submit and review links without DELETE or RLS by
   assert.match(role, /GRANT INSERT, UPDATE ON reja\.exchange_listing_parcel_links TO reja_exchange_app/);
   assert.doesNotMatch(role, /GRANT DELETE ON reja\.exchange_listing_parcel_links/);
 });
+
+test('first-party Taiseel listings receive a unique public reference that is not the database row ID', async () => {
+  const sql = await read('database/005_exchange_listing_parcel_links.sql');
+  assert.match(sql, /CREATE OR REPLACE FUNCTION reja\.assign_exchange_listing_reference/);
+  assert.match(sql, /'TSL-' \|\| upper\(replace\(gen_random_uuid\(\)::text, '-', ''\)\)/);
+  assert.match(sql, /UPDATE reja\.exchange_listings[\s\S]*WHERE nullif\(btrim\(listing_reference\), ''\) IS NULL/);
+  assert.match(sql, /A Taiseel listing reference is immutable once assigned/);
+  assert.match(sql, /exchange_listings_listing_reference_length_check/);
+  assert.match(sql, /listing_reference text UNIQUE/);
+});
