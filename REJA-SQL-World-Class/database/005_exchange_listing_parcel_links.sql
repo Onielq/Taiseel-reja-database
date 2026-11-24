@@ -3,6 +3,54 @@
 -- and canonical cadastral parcels. A market_property reference, address or
 -- coordinate is not enough to establish parcel identity.
 
+-- Give every first-party listing a stable, public-facing reference.
+-- Do not expose the identity primary key as the buyer-facing listing ID.
+CREATE OR REPLACE FUNCTION reja.assign_exchange_listing_reference()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = pg_catalog, reja
+AS $function$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    IF nullif(btrim(NEW.listing_reference), '') IS NULL THEN
+      NEW.listing_reference :=
+        'TSL-' || upper(replace(gen_random_uuid()::text, '-', ''));
+    ELSE
+      NEW.listing_reference := btrim(NEW.listing_reference);
+    END IF;
+  ELSIF NEW.listing_reference IS DISTINCT FROM OLD.listing_reference THEN
+    RAISE EXCEPTION 'A Taiseel listing reference is immutable once assigned';
+  END IF;
+
+  RETURN NEW;
+END
+$function$;
+
+-- Backfill older rows before enforcing the public reference requirement.
+UPDATE reja.exchange_listings
+   SET listing_reference = 'TSL-' || upper(replace(gen_random_uuid()::text, '-', ''))
+ WHERE nullif(btrim(listing_reference), '') IS NULL;
+
+UPDATE reja.exchange_listings
+   SET listing_reference = btrim(listing_reference)
+ WHERE listing_reference IS NOT NULL
+   AND listing_reference <> btrim(listing_reference);
+
+ALTER TABLE reja.exchange_listings
+  ADD CONSTRAINT exchange_listings_listing_reference_length_check
+  CHECK (
+    listing_reference IS NOT NULL
+    AND length(listing_reference) BETWEEN 1 AND 120
+  );
+
+DROP TRIGGER IF EXISTS exchange_listings_assign_reference
+  ON reja.exchange_listings;
+
+CREATE TRIGGER exchange_listings_assign_reference
+BEFORE INSERT OR UPDATE OF listing_reference ON reja.exchange_listings
+FOR EACH ROW
+EXECUTE FUNCTION reja.assign_exchange_listing_reference();
+
 CREATE TABLE IF NOT EXISTS reja.exchange_listing_parcel_links (
   id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   exchange_listing_id bigint NOT NULL
