@@ -133,7 +133,7 @@ This REJA database repository does not serve that HTTP route. Its responsibility
 
 ### First-party Taiseel Exchange listing-to-parcel identity
 
-Migration `database/005_exchange_listing_parcel_links.sql` adds `reja.exchange_listing_parcel_links`. It connects one exact first-party `exchange_listings.id` to a canonical parcel without treating the market-property record, seller's address or coordinates as proof.
+Migration `database/005_exchange_listing_parcel_links.sql` adds `reja.exchange_listing_parcel_links`. It connects one exact first-party `exchange_listings.id` to a canonical parcel without treating the market-property record, seller's address or coordinates as proof. The migration also assigns a stable public `TSL-...` reference to older first-party listings that do not already have one, and generates one for new listings. The reference is unique, immutable once assigned, and separate from the internal database ID.
 
 - The claim stores a UPI snapshot, evidence type/reference, submitter, independent reviewer and review timestamp.
 - The database trigger checks the supplied UPI against the canonical parcel and rejects a conflict with an already-populated `market_properties.parcel_id`.
