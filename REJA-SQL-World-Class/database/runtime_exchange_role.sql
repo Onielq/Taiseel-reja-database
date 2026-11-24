@@ -25,8 +25,9 @@ GRANT INSERT, UPDATE ON reja.organization_memberships TO reja_exchange_app;
 GRANT INSERT, UPDATE ON reja.organization_invitations TO reja_exchange_app;
 GRANT INSERT, UPDATE ON reja.platform_user_roles TO reja_exchange_app;
 
--- Seller authorization and first-party inventory. No physical DELETE is granted.
+-- Seller authorization, first-party inventory, and reviewed listing-to-parcel claims. No physical DELETE is granted.
 GRANT INSERT, UPDATE ON reja.listing_authorizations TO reja_exchange_app;
+GRANT INSERT, UPDATE ON reja.market_listing_parcel_links TO reja_exchange_app;
 GRANT INSERT, UPDATE ON reja.exchange_listings TO reja_exchange_app;
 GRANT INSERT ON reja.exchange_listing_observations TO reja_exchange_app;
 GRANT INSERT ON reja.exchange_listing_events TO reja_exchange_app;
