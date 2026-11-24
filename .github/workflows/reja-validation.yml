@@ -55,15 +55,16 @@ jobs:
         working-directory: REJA-SQL-World-Class
         run: |
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT postgis_full_version();"
-          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT to_regclass('reja.geo_areas'), to_regclass('reja.parcels'), to_regclass('reja.development_units'), to_regclass('reja.exchange_listings'), to_regclass('reja.market_listing_parcel_links');"
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT to_regclass('reja.geo_areas'), to_regclass('reja.parcels'), to_regclass('reja.development_units'), to_regclass('reja.exchange_listings'), to_regclass('reja.market_listing_parcel_links'), to_regclass('reja.exchange_listing_parcel_links');"
           test "$(psql "$DATABASE_URL" -At -c "SELECT relrowsecurity FROM pg_class WHERE oid = 'reja.market_listing_parcel_links'::regclass;")" = "t"
+          test "$(psql "$DATABASE_URL" -At -c "SELECT relrowsecurity FROM pg_class WHERE oid = 'reja.exchange_listing_parcel_links'::regclass;")" = "t"
       - name: Verify least-privilege runtime roles
         working-directory: REJA-SQL-World-Class
         run: |
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/runtime_readonly_role.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/runtime_exchange_role.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT rolname, rolbypassrls FROM pg_roles WHERE rolname IN ('reja_app','reja_exchange_app') ORDER BY rolname;"
-          test "$(psql "$DATABASE_URL" -At -c "SELECT CASE WHEN has_table_privilege('reja_app', 'reja.market_listing_parcel_links', 'SELECT') AND has_table_privilege('reja_exchange_app', 'reja.market_listing_parcel_links', 'INSERT') AND has_table_privilege('reja_exchange_app', 'reja.market_listing_parcel_links', 'UPDATE') THEN 'ok' ELSE 'missing' END;")" = "ok"
+          test "$(psql "$DATABASE_URL" -At -c "SELECT CASE WHEN has_table_privilege('reja_app', 'reja.market_listing_parcel_links', 'SELECT') AND has_table_privilege('reja_exchange_app', 'reja.market_listing_parcel_links', 'INSERT') AND has_table_privilege('reja_exchange_app', 'reja.market_listing_parcel_links', 'UPDATE') AND has_table_privilege('reja_app', 'reja.exchange_listing_parcel_links', 'SELECT') AND has_table_privilege('reja_exchange_app', 'reja.exchange_listing_parcel_links', 'INSERT') AND has_table_privilege('reja_exchange_app', 'reja.exchange_listing_parcel_links', 'UPDATE') THEN 'ok' ELSE 'missing' END;")" = "ok"
       - name: Smoke-test the source-aware market importer
         working-directory: REJA-SQL-World-Class
         run: |

@@ -82,6 +82,7 @@ The detailed feature mapping, evidence labels, proposed future data model, build
 - `reja.market_verified_transactions` is the shared eligibility view used by public transaction metrics. It excludes transactions with unresolved contradictory evidence.
 - `reja.market_listings` and `reja.market_listing_observations` track current asking prices and changes over time separately from completed deals.
 - `reja.market_listing_parcel_links` links an external source listing to a canonical cadastral parcel only after an independent UPI check and review.
+- `reja.exchange_listing_parcel_links` applies the same evidence standard to first-party Taiseel Exchange listings, separately from external market listings.
 - Monthly area trends and project-comparison metrics are derived from current eligible records. Medians are grouped by currency, rent period, property type and transaction type so unlike records are not silently mixed.
 
 No sample transaction or market price is seeded. An empty dashboard means verified source records have not yet been imported for that filter; it does not mean no property deals occurred.
@@ -129,6 +130,19 @@ GET /api/market/listing-profile?sourceKey=<source-key>&listingId=<source-record-
 ```
 
 This REJA database repository does not serve that HTTP route. Its responsibility is the migration, row-level access policy and least-privilege role grants used by the canonical app. The app's `APP_DATABASE_URL` must use the least-privilege `reja_app` role after this migration has been applied. The canonical production app does not yet have that runtime database connection configured, so deploying application code alone does not turn on live listing lookups. Follow the runtime least-privilege role instructions below; never reuse a preview-only or unrelated application's database URL.
+
+### First-party Taiseel Exchange listing-to-parcel identity
+
+Migration `database/005_exchange_listing_parcel_links.sql` adds `reja.exchange_listing_parcel_links`. It connects one exact first-party `exchange_listings.id` to a canonical parcel without treating the market-property record, seller's address or coordinates as proof. The migration also assigns a stable public `TSL-...` reference to older first-party listings that do not already have one, and generates one for new listings. The reference is unique, immutable once assigned, and separate from the internal database ID.
+
+- The claim stores a UPI snapshot, evidence type/reference, submitter, independent reviewer and review timestamp.
+- The database trigger checks the supplied UPI against the canonical parcel and rejects a conflict with an already-populated `market_properties.parcel_id`.
+- Submitted evidence fields are immutable. A correction requires a new claim rather than silently changing the record under review.
+- Sellers and their authorized organization members can submit pending claims. Only platform admins, moderators or data stewards can decide them.
+- Public reads require a current verified `primary_site` link, a published and unexpired Taiseel listing, and a currently valid verified seller authorization.
+- The migration does not seed listings or links. An absent verified relationship leaves the first-party listing separate from the parcel profile.
+
+The first-party and external relations remain separate: `exchange_listings` belong to Taiseel's marketplace; `market_listings` are source-observed records subject to source reuse permissions.
 
 ### Market endpoints
 
