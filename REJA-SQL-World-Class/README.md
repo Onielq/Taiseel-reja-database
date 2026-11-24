@@ -122,13 +122,13 @@ An external listing keeps its own `source_key` and `source_record_key`. It is no
 - The schema contains no coordinate-proximity matching. A location or nearby polygon cannot establish listing identity.
 - No sample links are inserted by the migration.
 
-The canonical buyer app resolves an external listing by source key and source listing ID through:
+The **canonical web application** repository `Onielq/african-zillow-` owns the buyer-facing resolver. After its app change is deployed, it serves:
 
 ```
 GET /api/market/listing-profile?sourceKey=<source-key>&listingId=<source-record-key>
 ```
 
-The app's `APP_DATABASE_URL` must use the least-privilege `reja_app` role after this migration has been applied. The current canonical production app does not yet have that runtime database connection configured, so deploying the application code alone does not turn on live listing lookups. Follow the runtime least-privilege role instructions below; never reuse a preview-only or unrelated application's database URL.
+This REJA database repository does not serve that HTTP route. Its responsibility is the migration, row-level access policy and least-privilege role grants used by the canonical app. The app's `APP_DATABASE_URL` must use the least-privilege `reja_app` role after this migration has been applied. The canonical production app does not yet have that runtime database connection configured, so deploying application code alone does not turn on live listing lookups. Follow the runtime least-privilege role instructions below; never reuse a preview-only or unrelated application's database URL.
 
 ### Market endpoints
 
