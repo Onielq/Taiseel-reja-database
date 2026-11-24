@@ -81,6 +81,7 @@ The detailed feature mapping, evidence labels, proposed future data model, build
 - `reja.market_transaction_evidence` lets other sources corroborate or challenge a canonical transaction without double-counting the deal.
 - `reja.market_verified_transactions` is the shared eligibility view used by public transaction metrics. It excludes transactions with unresolved contradictory evidence.
 - `reja.market_listings` and `reja.market_listing_observations` track current asking prices and changes over time separately from completed deals.
+- `reja.market_listing_parcel_links` links an external source listing to a canonical cadastral parcel only after an independent UPI check and review.
 - Monthly area trends and project-comparison metrics are derived from current eligible records. Medians are grouped by currency, rent period, property type and transaction type so unlike records are not silently mixed.
 
 No sample transaction or market price is seeded. An empty dashboard means verified source records have not yet been imported for that filter; it does not mean no property deals occurred.
@@ -109,6 +110,25 @@ npm run market:import -- /absolute/path/to/market-snapshot.json
 A regular import leaves transaction rows unverified. After a reviewer has inspected the underlying evidence and made the verification decision, use `--allow-verified` in the import command for a snapshot that explicitly marks approved records as verified and supplies `verifiedAt`. Do not use this flag simply because a price appears on a property website or social post. The source is recorded, but the importer does not automatically declare a source authoritative.
 
 Identical transaction observations can be linked to one canonical transaction with additional source evidence when their stable property/unit identity and transaction attributes match. Rows with an unresolved `contradicts` evidence status are excluded from public aggregates until that conflict is resolved. Imports run in a serializable database transaction and are recorded in `reja.ingestion_runs`.
+
+### Listing-to-parcel identity
+
+An external listing keeps its own `source_key` and `source_record_key`. It is not a parcel identifier. `reja.market_listing_parcel_links` stores an explicit relationship from that exact listing record to a canonical `reja.parcels` row.
+
+- Every claim stores the UPI snapshot checked by the reviewer, the relationship role, evidence type and reference, submitter, reviewer and review timestamp.
+- A database trigger rejects a UPI snapshot that does not exactly match the selected canonical parcel's UPI (case-insensitive, whitespace-trimmed).
+- The submitter and final reviewer must be different users.
+- Pending, rejected, conflicted and revoked claims are never public. Public reads require a current verified link and source permissions for commercial use, redistribution and caching.
+- The schema contains no coordinate-proximity matching. A location or nearby polygon cannot establish listing identity.
+- No sample links are inserted by the migration.
+
+The canonical buyer app resolves an external listing by source key and source listing ID through:
+
+```
+GET /api/market/listing-profile?sourceKey=<source-key>&listingId=<source-record-key>
+```
+
+The app's `APP_DATABASE_URL` must use the least-privilege `reja_app` role after this migration has been applied. The current canonical production app does not yet have that runtime database connection configured, so deploying the application code alone does not turn on live listing lookups. Follow the runtime least-privilege role instructions below; never reuse a preview-only or unrelated application's database URL.
 
 ### Market endpoints
 
