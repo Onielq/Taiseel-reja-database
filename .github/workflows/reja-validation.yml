@@ -56,14 +56,14 @@ jobs:
         run: |
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT postgis_full_version();"
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT to_regclass('reja.geo_areas'), to_regclass('reja.parcels'), to_regclass('reja.development_units'), to_regclass('reja.exchange_listings'), to_regclass('reja.market_listing_parcel_links');"
-          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT relrowsecurity FROM pg_class WHERE oid = 'reja.market_listing_parcel_links'::regclass;"
+          test "$(psql "$DATABASE_URL" -At -c "SELECT relrowsecurity FROM pg_class WHERE oid = 'reja.market_listing_parcel_links'::regclass;")" = "t"
       - name: Verify least-privilege runtime roles
         working-directory: REJA-SQL-World-Class
         run: |
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/runtime_readonly_role.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/runtime_exchange_role.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT rolname, rolbypassrls FROM pg_roles WHERE rolname IN ('reja_app','reja_exchange_app') ORDER BY rolname;"
-          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT has_table_privilege('reja_app', 'reja.market_listing_parcel_links', 'SELECT') AS public_read, has_table_privilege('reja_exchange_app', 'reja.market_listing_parcel_links', 'INSERT') AS submit_claim, has_table_privilege('reja_exchange_app', 'reja.market_listing_parcel_links', 'UPDATE') AS review_claim;"
+          test "$(psql "$DATABASE_URL" -At -c "SELECT has_table_privilege('reja_app', 'reja.market_listing_parcel_links', 'SELECT') || '|' || has_table_privilege('reja_exchange_app', 'reja.market_listing_parcel_links', 'INSERT') || '|' || has_table_privilege('reja_exchange_app', 'reja.market_listing_parcel_links', 'UPDATE');")" = "t|t|t"
       - name: Smoke-test the source-aware market importer
         working-directory: REJA-SQL-World-Class
         run: |
